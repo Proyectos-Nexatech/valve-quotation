@@ -63,7 +63,7 @@ export const Footer = () => {
           VALVE<span style={{ color: 'white', fontWeight: 400 }}>QUOTE</span>
         </h3>
         <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.4)', lineHeight: '1.8', maxWidth: '300px' }}>
-          TECHNICAL PRECISION & INDUSTRIAL AUTHORITY. PROPIEDAD DE INDUSTRIALFLOW S.A.S. MARCA REGISTRADA 2026.
+          TECHNICAL PRECISION & INDUSTRIAL AUTHORITY. PROPIEDAD DE BUSTILLO INGENIERIA SAS. - 2026.
         </p>
         <div style={{ marginTop: '3rem', width: '40px', height: '2px', backgroundColor: 'var(--color-red-bright)' }} />
       </div>
@@ -95,7 +95,7 @@ export const Footer = () => {
       </div>
 
       <div style={{ gridColumn: 'span 4', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '3rem', marginTop: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>© 2026 VALVEQUOTE INDUSTRIAL CRM. TODOS LOS DERECHOS RESERVADOS.</p>
+         <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>© 2026 VALVEQUOTE. TODOS LOS DERECHOS RESERVADOS.</p>
          <div style={{ display: 'flex', gap: '2rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-maroon)' }}>
             <span>TWITTER</span>
             <span>LINKEDIN</span>
