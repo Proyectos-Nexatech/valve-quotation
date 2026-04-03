@@ -23,29 +23,19 @@ export const Hero = () => {
       }} />
 
       <div style={{ position: 'relative', zIndex: 10, maxWidth: '900px' }}>
-        {/* Top Badge like Imagen 2 */}
-        <div style={{ 
-          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-          backgroundColor: 'var(--color-red-bright)', padding: '0.4rem 1rem', 
-          marginBottom: '2.5rem', borderRadius: '2px'
-        }}>
-           <span style={{ width: '6px', height: '6px', backgroundColor: 'white', borderRadius: '50%' }} />
-           <span style={{ fontSize: '0.625rem', fontWeight: 800, color: 'white', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-             30 AÑOS DE EXPERIENCIA
-           </span>
-        </div>
+        <div style={{ marginTop: '5rem' }}></div>
         
         <h1 className="display-font" style={{ 
-          fontSize: '5.5rem', lineHeight: '0.9', color: 'white', marginBottom: '2.5rem', 
+          fontSize: '5rem', lineHeight: '0.9', color: 'white', marginBottom: '2.5rem', 
           fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em'
         }}>
           SOLUCIONES DE <br />
-          <span style={{ color: 'var(--color-red-bright)' }}>INGENIERÍA</span> PARA <br />
-          VÁLVULAS
+          <span style={{ color: 'var(--color-red-bright)' }}>INGENIERÍA PARA</span> <br />
+          VÁLVULAS INDUSTRIALES
         </h1>
         
         <p style={{ fontSize: '1.125rem', lineHeight: '1.6', color: 'rgba(255,255,255,1)', marginBottom: '3.5rem', maxWidth: '600px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-          Optimice sus procesos industriales con nuestro sistema de cotización en tiempo real. Soporte técnico especializado de alta precisión.
+          Optimice sus procesos industriales con nuestro sistema de cotización. Soporte técnico especializado de alta precisión.
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
