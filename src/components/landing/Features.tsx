@@ -1,21 +1,30 @@
-import React from 'react';
-import { Settings, Droplets, Target } from 'lucide-react';
+import { Wrench, ShieldAlert, Power, Activity, Gauge } from 'lucide-react';
 
 const FEATURE_DATA = [
   {
-    title: 'Válvulas PSV',
+    title: 'Válvulas Manuales',
+    description: 'Mantenimiento preventivo, cambio de empaquetaduras y pruebas de estanqueidad certificadas.',
+    icon: <Wrench size={32} />,
+  },
+  {
+    title: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
     description: 'Inspección, calibración y certificación bajo norma API 527 para alivio de presión profesional.',
-    icon: <Settings size={32} />,
+    icon: <ShieldAlert size={32} />,
+  },
+  {
+    title: 'VÁLVULAS ON/OFF',
+    description: 'Pruebas de cierre (Seat Leakage) según ANSI/FCI 70-2 para válvulas de corte rápido.',
+    icon: <Power size={32} />,
   },
   {
     title: 'Válvulas de Control',
     description: 'Diagnóstico avanzado de actuadores y posicionadores con reporte de banda muerta especializado.',
-    icon: <Droplets size={32} />,
+    icon: <Activity size={32} />,
   },
   {
-    title: 'Válvulas Manuales',
-    description: 'Mantenimiento preventivo, cambio de empaquetaduras y pruebas de estanqueidad certificadas.',
-    icon: <Target size={32} />,
+    title: 'VÁLVULAS PRESIÓN-VACÍO',
+    description: 'Pruebas de hermeticidad y calibración de venteos para tanques de almacenamiento e industria.',
+    icon: <Gauge size={32} />,
   }
 ];
 
@@ -35,23 +44,24 @@ export const Features = () => {
           Nuestras Especialidades
         </p>
         <h2 className="display-font" style={{ 
-          fontSize: '3.5rem', color: 'var(--color-slate-800)', marginBottom: '1.5rem', 
-          fontWeight: 900, textTransform: 'uppercase' 
+          fontSize: '2.5rem', color: 'var(--color-slate-800)', marginBottom: '1.5rem', 
+          fontWeight: 900, textTransform: 'uppercase', lineHeight: '1.2'
         }}>
-          Servicios de <span style={{ color: 'var(--color-maroon)' }}>Ingeniería</span>
+          SERVICIOS DE <span style={{ color: 'var(--color-maroon)' }}>MANTENIMIENTO Y PRUEBAS</span> DE TODO TIPO DE VÁLVULAS INDUSTRIALES
         </h2>
         <div style={{ width: '60px', height: '4px', backgroundColor: 'var(--color-red-bright)', margin: '0 auto' }} />
       </div>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '4rem'
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: '1.5rem',
+        justifyContent: 'center'
       }}>
         {FEATURE_DATA.map((item, idx) => (
           <div key={idx} style={{
             backgroundColor: 'white',
-            padding: '4rem 3rem',
+            padding: '2rem 1.5rem',
             borderRadius: '2px',
             boxShadow: 'var(--shadow-float)',
             transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -59,7 +69,8 @@ export const Features = () => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            textAlign: 'center'
+            textAlign: 'center',
+            minHeight: '380px'
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.borderTopColor = 'var(--color-maroon)';

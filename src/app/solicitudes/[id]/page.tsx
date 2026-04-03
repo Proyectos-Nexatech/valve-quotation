@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, User, Phone, Mail, Clock, CheckCircle2, 
   Plus, Download, Send, Globe, FileText, ChevronRight, Loader2,
-  X, AlertTriangle, FileCheck
+  X, AlertTriangle, FileCheck, ShieldCheck, Share2, MessageSquare, Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -28,12 +28,13 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [currency, setCurrency] = useState<'COP' | 'USD'>('COP');
   const [trm, setTrm] = useState('4250.00');
   const [discount, setDiscount] = useState('0');
-  const [ivaRate] = useState('19');
+  const [ivaRate, setIvaRate] = useState('19');
 
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [successUpdate, setSuccessUpdate] = useState(false);
+  const [vendedores, setVendedores] = useState<any[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -57,6 +58,15 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
 
       if (itemsError) throw itemsError;
       setItems(itemsData || []);
+
+      const { data: vData } = await supabase.from('vendedores').select('nombre, id').eq('activo', true);
+      setVendedores(vData || []);
+
+      const { data: configData } = await supabase.from('configuracion_global').select('*').eq('id', 1).single();
+      if (configData) {
+        setIvaRate(configData.iva.toString());
+        setTrm(configData.trm_actual.toString());
+      }
 
     } catch (err) {
       console.error('Error fetching details:', err);
@@ -275,9 +285,88 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--color-on-surface-variant)' }}>
                        <Mail size={16} /> <span style={{ fontSize: '0.875rem', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden' }}>{request.cliente_email}</span>
                     </div>
-                    <button className="btn" style={{ width: '100%', backgroundColor: '#25D366', color: 'white', fontWeight: 800, padding: '1rem' }}>
-                       <Send size={16} /> WhatsApp Directo
+                    <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', fontWeight: 900, padding: '1rem' }}>
+                       <Send size={18} /> ENVIAR AL CLIENTE
                     </button>
+                </div>
+             </div>
+
+             {/* CRM / Analytics Controls */}
+             <div style={{ backgroundColor: 'white', padding: '2.5rem', border: '1px solid var(--color-surface-high)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)' }}>
+                <h3 className="display-font" style={{ fontSize: '0.75rem', letterSpacing: '0.1em', color: 'var(--color-on-surface-variant)', marginBottom: '2rem' }}>CALIFICACIÓN COMERCIAL</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>ESTADO DE CALIFICACIÓN</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                         <button 
+                           onClick={async () => {
+                             await supabase.from('solicitudes').update({ calificada: true }).eq('id', request.id);
+                             setRequest({ ...request, calificada: true });
+                           }}
+                           style={{ 
+                             padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', 
+                             backgroundColor: request.calificada === true ? '#DCFCE7' : 'white',
+                             color: request.calificada === true ? '#166534' : '#64748B', 
+                             fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                           }}
+                         >
+                            <ShieldCheck size={16} /> CALIFICADA
+                         </button>
+                         <button 
+                            onClick={async () => {
+                              await supabase.from('solicitudes').update({ calificada: false }).eq('id', request.id);
+                              setRequest({ ...request, calificada: false });
+                            }}
+                            style={{ 
+                              padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', 
+                              backgroundColor: request.calificada === false ? '#FEE2E2' : 'white',
+                              color: request.calificada === false ? '#991B1B' : '#64748B', 
+                              fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                            }}
+                         >
+                            <X size={16} /> NO CALIFICA
+                         </button>
+                      </div>
+                   </div>
+
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>CANAL DE ORIGEN</label>
+                      <select 
+                        value={request.canal_origen || 'web'}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          await supabase.from('solicitudes').update({ canal_origen: val }).eq('id', request.id);
+                          setRequest({ ...request, canal_origen: val });
+                        }}
+                        style={{ padding: '0.875rem', borderRadius: '4px', border: '1px solid #E2E8F0', fontSize: '0.875rem', fontWeight: 700, appearance: 'none', backgroundColor: '#F8FAFC' }}
+                      >
+                         <option value="web">SITIO WEB</option>
+                         <option value="whatsapp">WHATSAPP</option>
+                         <option value="referido">REFERIDO / CLIENTE</option>
+                         <option value="correo">CORREO DIRECTO</option>
+                      </select>
+                   </div>
+
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                       <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>VENDEDOR / RESPONSABLE</label>
+                       <div style={{ position: 'relative' }}>
+                          <select 
+                            value={request.vendedor_asignado || ''}
+                            onChange={async (e) => {
+                               const val = e.target.value;
+                               await supabase.from('solicitudes').update({ vendedor_asignado: val }).eq('id', request.id);
+                               setRequest({ ...request, vendedor_asignado: val });
+                            }}
+                            style={{ width: '100%', padding: '0.875rem', paddingLeft: '2.5rem', borderRadius: '4px', border: '1px solid #E2E8F0', fontSize: '0.875rem', fontWeight: 700, appearance: 'none', backgroundColor: '#F8FAFC' }}
+                          >
+                             <option value="">Seleccionar responsable...</option>
+                             {vendedores.map(v => (
+                               <option key={v.id} value={v.nombre}>{v.nombre}</option>
+                             ))}
+                          </select>
+                          <Briefcase size={16} style={{ position: 'absolute', left: '0.875rem', top: '1rem', color: '#94A3B8', pointerEvents: 'none' }} />
+                       </div>
+                    </div>
                 </div>
              </div>
 

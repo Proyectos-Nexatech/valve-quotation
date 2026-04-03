@@ -25,6 +25,8 @@ const VALVE_TYPES: Record<string, string> = {
   'control': 'Válvula de Control'
 };
 
+const DEFAULT_IVA = 19;
+
 export default function CatalogoPricingPage() {
   const [items, setItems] = useState<PriceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);

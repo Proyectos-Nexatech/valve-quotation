@@ -35,7 +35,7 @@
 
   /* Typography */
   --font-display: 'Montserrat', sans-serif;
-  --font-body: 'Lato', sans-serif;
+  --font-body: 'Montserrat', sans-serif;
   --font-mono: 'Space Grotesk', monospace;
 
   /* Layout & Specs */
@@ -70,7 +70,7 @@
 body {
   background-color: var(--color-bg);
   color: var(--color-on-surface);
-  font-family: var(--font-body);
+  font-family: var(--font-display); /* Montserrat - Unificado con Inicio */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }

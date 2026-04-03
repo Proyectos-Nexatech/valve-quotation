@@ -5,20 +5,29 @@ import { Plus, List, TrendingUp, Clock, FileText, Loader2, ArrowRight } from 'lu
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-const STATS = [
-  { label: 'Solicitudes Pendientes', value: '14', icon: <Clock size={20} />, color: '#F59E0B' },
-  { label: 'Cotizaciones en Proceso', value: '08', icon: <TrendingUp size={20} />, color: '#3B82F6' },
-  { label: 'Enviadas este Mes', value: '42', icon: <FileText size={20} />, color: '#10B981' },
-  { label: 'Valor del Pipeline', value: '$12.4M', icon: <TrendingUp size={20} />, color: 'var(--color-midnight)' },
-];
-
 export default function DashboardPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    pending: '0',
+    inProcess: '0',
+    sentThisMonth: '0',
+    proyectado: '$0',
+    enviado: '$0'
+  });
 
   useEffect(() => {
-    fetchRequests();
+    fetchDashboardData();
   }, []);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    await Promise.all([
+      fetchRequests(),
+      fetchStats()
+    ]);
+    setIsLoading(false);
+  };
 
   const fetchRequests = async () => {
     try {
@@ -26,16 +35,86 @@ export default function DashboardPage() {
         .from('solicitudes')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(5);
 
       if (error) throw error;
       setRequests(data || []);
     } catch (err) {
       console.error('Error fetching requests:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  const fetchStats = async () => {
+    try {
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+      const [pendingCount, inProcessCount, sentMonthCount, itemsResult, solicitudesResult] = await Promise.all([
+        supabase.from('solicitudes').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
+        supabase.from('solicitudes').select('*', { count: 'exact', head: true }).eq('estado', 'en_proceso'),
+        supabase.from('solicitudes').select('*', { count: 'exact', head: true }).eq('estado', 'enviada').gte('created_at', startOfMonth),
+        supabase.from('items_solicitud').select('*'),
+        supabase.from('solicitudes').select('id, estado')
+      ]);
+
+      const getFallbackPrice = (type: string) => {
+        const t = String(type || '').toLowerCase();
+        if (t.includes('control')) return 1912500;
+        if (t.includes('safety') || t.includes('seguridad')) return 1190000;
+        return 850000;
+      };
+
+      // Mapa de estados de solicitudes
+      const solEstadoMap: Record<string, string> = {};
+      (solicitudesResult.data || []).forEach((s: any) => {
+        solEstadoMap[s.id] = s.estado || 'pendiente';
+      });
+
+      // Calcular montos agrupados por estado
+      let totalProyectado = 0;
+      let totalEnviado = 0;
+
+      (itemsResult.data || []).forEach((item: any) => {
+        const estado = solEstadoMap[item.solicitud_id];
+        if (!estado) return;
+
+        const price = parseFloat(String(item.precio_unitario_cop || getFallbackPrice(item.tipo_valvula)));
+        const qty = Number(item.cantidad || 1);
+        const subtotal = price * qty;
+        
+        // El usuario quiere el TOTAL FINAL (incluyendo IVA del 19%)
+        const totalConIva = subtotal * 1.19;
+
+        if (estado === 'pendiente' || estado === 'en_proceso') {
+          totalProyectado += totalConIva;
+        } else if (estado === 'enviada' || estado === 'finalizada') {
+          totalEnviado += totalConIva;
+        }
+      });
+
+      const formatCurrency = (value: number) => {
+        if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+        if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+        return `$${value.toFixed(0)}`;
+      };
+
+      setStats({
+        pending: String(pendingCount.count || 0).padStart(2, '0'),
+        inProcess: String(inProcessCount.count || 0).padStart(2, '0'),
+        sentThisMonth: String(sentMonthCount.count || 0).padStart(2, '0'),
+        proyectado: formatCurrency(totalProyectado),
+        enviado: formatCurrency(totalEnviado)
+      });
+    } catch (err) {
+      console.error('Error fetching stats:', err);
+    }
+  };
+
+  const STAT_CONFIG = [
+    { label: 'Solicitudes Pendientes', value: stats.pending, icon: <Clock size={20} />, color: '#F59E0B' },
+    { label: 'Enviadas este Mes', value: stats.sentThisMonth, icon: <FileText size={20} />, color: '#10B981' },
+    { label: 'Valor Proyectado', value: stats.proyectado, icon: <TrendingUp size={20} />, color: '#3B82F6' },
+    { label: 'Valor Enviado', value: stats.enviado, icon: <TrendingUp size={20} />, color: 'var(--color-midnight)' },
+  ];
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
        {/* Header */}
@@ -50,27 +129,31 @@ export default function DashboardPage() {
        </div>
 
        {/* Stats Grid */}
-       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-          {STATS.map((stat, idx) => (
-            <div key={idx} style={{ 
-               backgroundColor: 'white', padding: '2rem', borderRadius: 'var(--radius-sm)', 
-               boxShadow: 'var(--shadow-md)', border: '1px solid var(--color-surface-high)',
-               display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center'
-            }}>
-               <div style={{ 
-                  width: '48px', height: '48px', backgroundColor: 'var(--color-surface-low)', 
-                  borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  color: stat.color 
-               }}>
-                 {stat.icon}
-               </div>
-               <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.625rem', fontWeight: 600, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', marginBottom: '0.25rem' }}>{stat.label.toUpperCase()}</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-midnight)' }}>{stat.value}</p>
-               </div>
-            </div>
-          ))}
-       </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+           {STAT_CONFIG.map((stat, idx) => (
+             <div key={idx} style={{ 
+                backgroundColor: 'white', padding: '2rem', borderRadius: 'var(--radius-sm)', 
+                boxShadow: 'var(--shadow-md)', border: '1px solid var(--color-surface-high)',
+                display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center'
+             }}>
+                <div style={{ 
+                   width: '48px', height: '48px', backgroundColor: 'var(--color-surface-low)', 
+                   borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                   color: stat.color 
+                }}>
+                  {stat.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                   <p style={{ fontSize: '0.625rem', fontWeight: 600, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', marginBottom: '0.25rem' }}>{stat.label.toUpperCase()}</p>
+                   {isLoading ? (
+                     <div style={{ height: '1.5rem', width: '3rem', backgroundColor: '#f1f5f9', borderRadius: '4px' }} className="animate-pulse" />
+                   ) : (
+                     <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-midnight)' }}>{stat.value}</p>
+                   )}
+                </div>
+             </div>
+           ))}
+        </div>
 
        {/* Recent Requests Table */}
        <div style={{ 

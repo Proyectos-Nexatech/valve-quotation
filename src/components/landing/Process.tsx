@@ -37,7 +37,7 @@ export const Process = () => {
           fontSize: '3.5rem', color: 'var(--color-slate-800)', marginBottom: '1.5rem', 
           fontWeight: 900, textTransform: 'uppercase' 
         }}>
-          PROCESO DE <span style={{ color: 'var(--color-maroon)' }}>INGENIERÍA</span>
+          PROCESO DEL <span style={{ color: 'var(--color-maroon)' }}>SERVICIO</span>
         </h2>
         <div style={{ width: '80px', height: '4px', backgroundColor: 'var(--color-red-bright)', margin: '0 auto' }} />
       </div>
