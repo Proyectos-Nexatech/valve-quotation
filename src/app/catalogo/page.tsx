@@ -14,6 +14,7 @@ interface PriceItem {
   tamano: string;
   rating: string;
   servicio: string;
+  ubicacion: string;
   costo_base: number | string;
 }
 
@@ -38,6 +39,9 @@ export default function CatalogoPricingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditForm, setBulkEditForm] = useState<Partial<PriceItem>>({});
 
   const [editForm, setEditForm] = useState<Partial<PriceItem>>({});
   const [addForm, setAddForm] = useState<Partial<PriceItem>>({
@@ -45,6 +49,7 @@ export default function CatalogoPricingPage() {
     tamano: '',
     rating: '',
     servicio: '',
+    ubicacion: '',
     costo_base: ''
   });
 
@@ -87,6 +92,7 @@ export default function CatalogoPricingPage() {
           tamano: addForm.tamano,
           rating: addForm.rating,
           servicio: addForm.servicio,
+          ubicacion: addForm.ubicacion,
           costo_base: parseFloat(addForm.costo_base as string)
         }])
         .select()
@@ -120,6 +126,7 @@ export default function CatalogoPricingPage() {
           tamano: editForm.tamano,
           rating: editForm.rating,
           servicio: editForm.servicio,
+          ubicacion: editForm.ubicacion,
           costo_base: parseFloat(editForm.costo_base as string)
         })
         .eq('id', id);
@@ -141,6 +148,7 @@ export default function CatalogoPricingPage() {
       const { error } = await supabase.from('tarifario').delete().eq('id', id);
       if (error) throw error;
       setItems(items.filter(it => it.id !== id));
+      setSelectedIds(prev => prev.filter(i => i !== id));
     } catch (err) {
       console.error('Error deleting item:', err);
     }
@@ -154,18 +162,84 @@ export default function CatalogoPricingPage() {
   const filteredItems = items.filter(it => 
     it.servicio.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (it.tamano || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    VALVE_TYPES[it.tipo_valvula].toLowerCase().includes(searchTerm.toLowerCase())
+    VALVE_TYPES[it.tipo_valvula].toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (it.ubicacion || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredItems.length && filteredItems.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredItems.map(it => it.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`¿Estás seguro de eliminar ${selectedIds.length} ítems seleccionados?`)) return;
+    setSavingId('bulk');
+    try {
+      const { error } = await supabase
+        .from('tarifario')
+        .delete()
+        .in('id', selectedIds);
+
+      if (error) throw error;
+      setItems(prev => prev.filter(it => !selectedIds.includes(it.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      console.error('Error deleting bulk:', err);
+      alert('Error al eliminar en bloque.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (Object.keys(bulkEditForm).length === 0) {
+      alert('No hay cambios definidos para aplicar.');
+      return;
+    }
+    if (!window.confirm(`¿Deseas aplicar estos cambios a ${selectedIds.length} ítems?`)) return;
+    
+    setSavingId('bulk');
+    try {
+      const updates: any = { ...bulkEditForm };
+      if (updates.costo_base) updates.costo_base = parseFloat(updates.costo_base as string);
+
+      const { error } = await supabase
+        .from('tarifario')
+        .update(updates)
+        .in('id', selectedIds);
+
+      if (error) throw error;
+      
+      setItems(prev => prev.map(it => 
+        selectedIds.includes(it.id) ? { ...it, ...updates } : it
+      ));
+      setIsBulkEditing(false);
+      setSelectedIds([]);
+      setBulkEditForm({});
+    } catch (err) {
+      console.error('Error updating bulk:', err);
+      alert('Error en actualización masiva.');
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   const downloadTemplate = () => {
     if (!window.confirm('¿Deseas descargar la plantilla base para el tarifario?')) return;
     
     // Headers in Spanish for the user
-    const headers = 'Tipo_Valvula;Tamaño;Rating;Servicio;Costo_Base\n';
+    const headers = 'Tipo_Valvula;Tamaño;Rating;Servicio;Ubicacion;Costo_Base\n';
     const examples = [
-      'manual;2";150#;Mantenimiento preventivo;150000',
-      'control;4";300#;Calibración técnica;450000',
-      'safety;1";600#;Prueba de disparo;280000'
+      'manual;2";150#;Mantenimiento preventivo;Taller;150000',
+      'control;4";300#;Calibración técnica;Campo;450000',
+      'safety;1";600#;Prueba de disparo;Taller;280000'
     ].join('\n');
     
     // Add UTF-8 BOM for Excel compatibility with accents
@@ -208,16 +282,17 @@ export default function CatalogoPricingPage() {
         const delimiter = line.includes(';') ? ';' : ',';
         const columns = line.split(delimiter);
         
-        if (columns.length >= 3) {
-          const [tipo, tamano, rating, servicio, costo] = columns;
+        if (columns.length >= 5) {
+          const [tipo, tamano, rating, servicio, ubicacion, costo] = columns;
           
-          if (tipo && servicio && costo) {
+          if (tipo && servicio && (costo || ubicacion)) {
             dataToInsert.push({
               tipo_valvula: tipo.trim().toLowerCase(), // Normalize to internal keys
               tamano: tamano?.trim() || '',
               rating: rating?.trim() || '',
               servicio: servicio.trim(),
-              costo_base: parseFloat(costo.trim().replace(',', '.')) || 0 // Handle decimal commas from Excel
+              ubicacion: ubicacion?.trim() || '',
+              costo_base: parseFloat((costo || ubicacion || '').trim().replace(',', '.')) || 0 
             });
           }
         }
@@ -289,7 +364,7 @@ export default function CatalogoPricingPage() {
                    CREATE TABLE tarifario (<br />
                    &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br />
                    &nbsp;&nbsp;tipo_valvula text, tamano text, rating text,<br />
-                   &nbsp;&nbsp;servicio text, costo_base numeric,<br />
+                   &nbsp;&nbsp;servicio text, ubicacion text, costo_base numeric,<br />
                    &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br />
                    );
                 </div>
@@ -307,6 +382,21 @@ export default function CatalogoPricingPage() {
                style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none' }}
              />
           </div>
+          
+          {selectedIds.length > 0 && (
+             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#F0F9FF', padding: '0.5rem 1.5rem', borderRadius: '8px', border: '1px solid #BAE6FD' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0369A1' }}>{selectedIds.length} SELECCIONADOS</span>
+                <button onClick={() => { setBulkEditForm({}); setIsBulkEditing(true); }} style={{ padding: '0.5rem 1rem', backgroundColor: '#3B82F6', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900, cursor: 'pointer' }}>
+                  EDITAR BLOQUE
+                </button>
+                <button onClick={handleBulkDelete} style={{ padding: '0.5rem 1rem', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900, cursor: 'pointer' }}>
+                  ELIMINAR
+                </button>
+                <button onClick={() => setSelectedIds([])} style={{ backgroundColor: 'transparent', border: 'none', color: '#64748B', cursor: 'pointer' }}>
+                  <X size={16} />
+                </button>
+             </div>
+          )}
        </div>
 
        {/* Detailed Data Table */}
@@ -314,10 +404,18 @@ export default function CatalogoPricingPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
              <thead style={{ backgroundColor: '#F8FAFC' }}>
                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-surface-high)' }}>
-                   <th style={{ padding: '1.25rem 2rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TIPO VÁLVULA</th>
+                   <th style={{ padding: '1.25rem 2rem', width: '40px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.length === filteredItems.length && filteredItems.length > 0} 
+                        onChange={toggleSelectAll} 
+                      />
+                   </th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TIPO VÁLVULA</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TAMAÑO</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>RATING</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>DESCRIPCIÓN SERVICIO</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>UBICACIÓN</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>COSTO BASE</th>
                    <th style={{ padding: '1.25rem 2rem', textAlign: 'right', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>ACCIONES</th>
                 </tr>
@@ -326,6 +424,7 @@ export default function CatalogoPricingPage() {
                 {/* Add Item Row */}
                 {isAdding && (
                   <tr style={{ backgroundColor: '#F0F9FF', borderBottom: '2px solid #3B82F6' }}>
+                     <td />
                      <td style={{ padding: '1.5rem 2rem' }}>
                         <select 
                           value={addForm.tipo_valvula} onChange={(e) => setAddForm({ ...addForm, tipo_valvula: e.target.value })}
@@ -347,6 +446,10 @@ export default function CatalogoPricingPage() {
                           style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
                      </td>
                      <td style={{ padding: '1.5rem 1rem' }}>
+                        <input placeholder='Ej: Taller / In-Situ' value={addForm.ubicacion} onChange={(e) => setAddForm({ ...addForm, ubicacion: e.target.value })}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
+                     </td>
+                     <td style={{ padding: '1.5rem 1rem' }}>
                         <input type="number" placeholder='0' value={addForm.costo_base} onChange={(e) => setAddForm({ ...addForm, costo_base: e.target.value })}
                           style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6', fontWeight: 800 }} />
                      </td>
@@ -364,19 +467,22 @@ export default function CatalogoPricingPage() {
                 )}
 
                 {isLoading ? (
-                  <tr><td colSpan={6} style={{ padding: '8rem', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} style={{ margin: '0 auto' }} /></td></tr>
+                  <tr><td colSpan={8} style={{ padding: '8rem', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} style={{ margin: '0 auto' }} /></td></tr>
                 ) : filteredItems.length === 0 && !isAdding ? (
                    <tr>
-                      <td colSpan={6} style={{ padding: '8rem', textAlign: 'center', opacity: 0.3 }}>
+                      <td colSpan={8} style={{ padding: '8rem', textAlign: 'center', opacity: 0.3 }}>
                          <Database size={48} style={{ margin: '0 auto 1.5rem' }} />
                          <p style={{ fontWeight: 800 }}>Tarifario vacío o sin coincidencias.</p>
                       </td>
                    </tr>
                 ) : (
                   filteredItems.map(item => (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9', backgroundColor: selectedIds.includes(item.id) ? '#F8FAFC' : 'transparent' }}>
                       {isEditing === item.id ? (
                         <>
+                          <td style={{ padding: '1.5rem 2rem' }}>
+                             <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelectOne(item.id)} />
+                          </td>
                           <td style={{ padding: '1.5rem 2rem' }}>
                              <select value={editForm.tipo_valvula} onChange={(e) => setEditForm({ ...editForm, tipo_valvula: e.target.value })}
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }}>
@@ -393,6 +499,10 @@ export default function CatalogoPricingPage() {
                           </td>
                           <td style={{ padding: '1.5rem 1rem' }}>
                              <input value={editForm.servicio} onChange={(e) => setEditForm({ ...editForm, servicio: e.target.value })}
+                               style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
+                          </td>
+                          <td style={{ padding: '1.5rem 1rem' }}>
+                             <input value={editForm.ubicacion || ''} onChange={(e) => setEditForm({ ...editForm, ubicacion: e.target.value })}
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
                           </td>
                           <td style={{ padding: '1.5rem 1rem' }}>
@@ -413,6 +523,9 @@ export default function CatalogoPricingPage() {
                       ) : (
                         <>
                           <td style={{ padding: '1.5rem 2rem' }}>
+                             <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelectOne(item.id)} />
+                          </td>
+                          <td style={{ padding: '1.5rem 2rem' }}>
                              <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-midnight)' }}>{VALVE_TYPES[item.tipo_valvula]}</span>
                           </td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 800 }}>{item.tamano || '—'}</td>
@@ -420,6 +533,7 @@ export default function CatalogoPricingPage() {
                              <span style={{ fontSize: '0.7rem', fontWeight: 900, backgroundColor: '#F8FAFC', padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #E2E8F0' }}>{item.rating || '—'}</span>
                           </td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>{item.servicio}</td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-midnight)' }}>{item.ubicacion || '—'}</td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 900, color: '#111827' }}>
                              $ {parseFloat(item.costo_base as string).toLocaleString('es-CO')}
                           </td>
@@ -530,6 +644,69 @@ export default function CatalogoPricingPage() {
                 <AlertTriangle size={16} color="#EF4444" />
                 <p style={{ fontSize: '0.625rem', color: '#B91C1C', fontWeight: 700 }}>IMPORTANTE: Asegúrate de que las columnas coincidan exactamente con la plantilla para evitar errores en la base de datos.</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Edit Modal */}
+        {isBulkEditing && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, backdropFilter: 'blur(8px)' }}>
+            <div style={{ backgroundColor: 'white', width: '90%', maxWidth: '500px', borderRadius: 'var(--radius-md)', padding: '2.5rem', boxShadow: 'var(--shadow-float)' }}>
+               <h2 style={{ fontSize: '1.5rem', color: 'var(--color-midnight)', marginBottom: '1rem', textAlign: 'center' }}>Edición Masiva</h2>
+               <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '0.875rem', textAlign: 'center', marginBottom: '2rem' }}>
+                 Se aplicarán los cambios a <strong>{selectedIds.length}</strong> ítems seleccionados. Solo llena los campos que deseas cambiar.
+               </p>
+
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>TIPO VÁLVULA</label>
+                    <select 
+                      value={bulkEditForm.tipo_valvula || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, tipo_valvula: e.target.value })}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }}
+                    >
+                       <option value="">(Sin cambios)</option>
+                       {Object.entries(VALVE_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>TAMAÑO</label>
+                      <input 
+                        placeholder='No cambiar' value={bulkEditForm.tamano || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, tamano: e.target.value })}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>RATING</label>
+                      <input 
+                        placeholder='No cambiar' value={bulkEditForm.rating || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, rating: e.target.value })}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>UBICACIÓN</label>
+                    <input 
+                      placeholder='No cambiar' value={bulkEditForm.ubicacion || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, ubicacion: e.target.value })}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>COSTO BASE</label>
+                    <input 
+                      type="number" placeholder='No cambiar' value={bulkEditForm.costo_base || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, costo_base: e.target.value })}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none', fontWeight: 800 }} />
+                  </div>
+               </div>
+
+               <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem' }}>
+                  <button onClick={() => setIsBulkEditing(false)} style={{ flex: 1, padding: '1rem', backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', fontWeight: 800, color: '#64748B', cursor: 'pointer' }}>
+                    CANCELAR
+                  </button>
+                  <button onClick={handleBulkUpdate} disabled={savingId === 'bulk'} style={{ flex: 2, padding: '1rem', backgroundColor: 'var(--color-midnight)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    {savingId === 'bulk' ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} APLICAR CAMBIOS
+                  </button>
+               </div>
             </div>
           </div>
         )}

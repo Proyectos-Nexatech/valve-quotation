@@ -9,7 +9,7 @@ export const Hero = () => {
       minHeight: '85vh',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 5.5rem',
+      padding: '6rem 5.5rem',
       backgroundColor: '#520101', // Deep Maroon from Reference Image 2
       backgroundImage: 'linear-gradient(to right, #520101 0%, #3a0101 100%)',
       position: 'relative',
@@ -23,7 +23,7 @@ export const Hero = () => {
       }} />
 
       <div style={{ position: 'relative', zIndex: 10, maxWidth: '900px' }}>
-        <div style={{ marginTop: '5rem' }}></div>
+
         
         <h1 className="display-font" style={{ 
           fontSize: '5rem', lineHeight: '0.9', color: 'white', marginBottom: '2.5rem', 

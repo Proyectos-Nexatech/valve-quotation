@@ -27,6 +27,7 @@ export const Step2 = () => {
         nominalSize: '2"',
         rating: '150#',
         serviceType: 'Mantenimiento General',
+        location: 'Taller',
         technicalNotes: '',
         tag: '',
         quantity: 1,
@@ -43,6 +44,7 @@ export const Step2 = () => {
       nominalSize: '2"',
       rating: '150#',
       serviceType: 'Mantenimiento General',
+      location: 'Taller',
       technicalNotes: '',
       tag: '',
       quantity: 1,
@@ -150,13 +152,25 @@ export const Step2 = () => {
                     </select>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', gridColumn: 'span 2' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <label style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>TIPO DE SERVICIO</label>
                     <select 
                       className="precision-input" style={{ width: '100%', padding: '0.75rem' }}
                       value={item.serviceType} onChange={(e) => updateItem(item.id, { serviceType: e.target.value })}
                     >
                       {SERVICES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>UBICACIÓN</label>
+                    <select 
+                      className="precision-input" style={{ width: '100%', padding: '0.75rem' }}
+                      value={item.location} onChange={(e) => updateItem(item.id, { location: e.target.value })}
+                    >
+                      <option value="Taller">Taller</option>
+                      <option value="In-Situ / Campo">In-Situ / Campo</option>
+                      <option value="Workshop (Overseas)">Workshop (Overseas)</option>
                     </select>
                   </div>
 

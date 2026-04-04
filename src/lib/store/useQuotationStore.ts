@@ -8,6 +8,7 @@ export interface RequestItem {
   serviceType: string;
   technicalNotes: string;
   tag: string;
+  location: string;
   quantity: number;
   brand?: string;
   serialNumber?: string;

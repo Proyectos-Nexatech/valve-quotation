@@ -222,7 +222,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                   Válvula de {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} {item.especificaciones?.nominalSize} {item.especificaciones?.rating}
                                 </h4>
                                 <p style={{ fontSize: '0.625rem', color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', lineHeight: '1.5' }}>
-                                  {item.servicio} | Marca: {item.especificaciones?.brand || 'Indeterminada'} | SN: {item.especificaciones?.serialNumber || 'N/A'}
+                                  {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Marca: {item.especificaciones?.brand || 'Indeterminada'} | SN: {item.especificaciones?.serialNumber || 'N/A'}
                                 </p>
                             </td>
                             <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(getBasePrice(item.tipo_valvula))}</td>
