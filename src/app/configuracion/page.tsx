@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 
 export default function ConfigurationPage() {
-  const [activeTab, setActiveTab] = useState<'variables' | 'company' | 'legal' | 'users'>('variables');
+  const [activeTab, setActiveTab] = useState<'variables' | 'company' | 'legal' | 'users' | 'template'>('variables');
   const [config, setConfig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -137,7 +137,8 @@ export default function ConfigurationPage() {
         <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--color-surface-high)', marginBottom: '2.5rem' }}>
            <TabItem label="Variables Globales" active={activeTab === 'variables'} onClick={() => setActiveTab('variables')} icon={<Globe size={16} />} />
            <TabItem label="Perfil de Empresa" active={activeTab === 'company'} onClick={() => setActiveTab('company')} icon={<Building2 size={16} />} />
-           <TabItem label="Legales & PDF" active={activeTab === 'legal'} onClick={() => setActiveTab('legal')} icon={<FileText size={16} />} />
+           <TabItem label="Plantilla de Cotización" active={activeTab === 'template'} onClick={() => setActiveTab('template')} icon={<FileText size={16} />} />
+           <TabItem label="Legales & PDF" active={activeTab === 'legal'} onClick={() => setActiveTab('legal')} icon={<Shield size={16} />} />
            <TabItem label="Gestión de Equipo" active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<UsersIcon size={16} />} />
         </div>
 
@@ -173,6 +174,91 @@ export default function ConfigurationPage() {
                          type="number" className="p-input"
                          value={config.validez_dias} onChange={e => setConfig({ ...config, validez_dias: parseInt(e.target.value) })}
                        />
+                    </div>
+                 </div>
+              </div>
+           )}
+
+           {activeTab === 'template' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(350px, 1fr) 1.5fr', gap: '3rem' }}>
+                 {/* Editor */}
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.5rem' }}>AJUSTES DE LA PLANTILLA</h3>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                       <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>ENCABEZADO (RAZÓN SOCIAL)</label>
+                       <input className="p-input" value={config.razon_social || ''} onChange={e => setConfig({ ...config, razon_social: e.target.value })} />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                       <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>DATOS DE CONTACTO EN DOCUMENTO</label>
+                       <textarea 
+                         style={{ height: '100px', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, backgroundColor: '#F8FAFC' }}
+                         value={`${config.direccion || ''}\n${config.ciudad || ''}\nTel: ${config.telefono_contacto || ''}\nEmail: ${config.email_contacto || ''}`}
+                         readOnly
+                       />
+                       <p style={{ fontSize: '0.625rem', color: 'var(--color-on-surface-variant)' }}>Estos datos se sincronizan desde la pestaña "Perfil de Empresa".</p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                       <label style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B' }}>NOTAS ADICIONALES (POR DEFECTO)</label>
+                       <textarea 
+                         className="p-input" style={{ height: '120px' }}
+                         value={config.terminos_condiciones || ''} onChange={e => setConfig({ ...config, terminos_condiciones: e.target.value })}
+                       />
+                    </div>
+                 </div>
+
+                 {/* Live Preview */}
+                 <div style={{ padding: '2rem', backgroundColor: '#F1F5F9', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                    <p style={{ fontSize: '0.625rem', fontWeight: 800, color: '#64748B', textAlign: 'center', marginBottom: '2rem', letterSpacing: '0.1em' }}>PREVISUALIZACIÓN DE DOCUMENTO (BORRADOR)</p>
+                    
+                    <div style={{ 
+                       backgroundColor: 'white', padding: '3rem', width: '100%', minHeight: '600px', 
+                       boxShadow: 'var(--shadow-lg)', border: '1px solid #CBD5E1', color: '#1E293B',
+                       display: 'flex', flexDirection: 'column'
+                    }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4rem', paddingBottom: '2rem', borderBottom: '2px solid #F1F5F9' }}>
+                           <div style={{ width: '120px', height: '120px', backgroundColor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}>
+                              {config.logo_url ? <img src={config.logo_url} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '0.625rem', opacity: 0.2 }}>LOGO</span>}
+                           </div>
+                           <div style={{ textAlign: 'right', flex: 1, paddingLeft: '2rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                              <h4 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-midnight)', margin: 0 }}>{config.razon_social}</h4>
+                              <p style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: 700 }}>NIT: {config.nit}</p>
+                              <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--color-red-bright)', marginBottom: '0.25rem' }}>COTIZACIÓN: VQ-2026-XXXX</span>
+                              <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>{config.direccion}</p>
+                              <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Tel: {config.telefono_contacto} | Email: {config.email_contacto}</p>
+                           </div>
+                        </div>
+
+                        {/* Body Placeholder */}
+                        <div style={{ flex: 1 }}>
+                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
+                              <div>
+                                 <p style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-maroon)', marginBottom: '0.75rem' }}>RECIBIDO DE:</p>
+                                 <p style={{ fontSize: '0.875rem', fontWeight: 900, marginBottom: '0.25rem' }}>RICARDO CASTELLANOS</p>
+                                 <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.2rem' }}>Empresa: PetroQuímica Industrial</p>
+                                 <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.2rem' }}>NIT/ID: 900.123.456-1</p>
+                                 <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '0.2rem' }}>Planta: Refinería Sector Norte</p>
+                                 <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Tel: +57 321 000 0000 | Email: ejemplo@correo.com</p>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                 <p style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.6, marginBottom: '0.5rem' }}>Fecha: {new Date().toLocaleDateString('es-CO')}</p>
+                                 <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-midnight)' }}>Prioridad: Normal (5-10 días)</p>
+                              </div>
+                           </div>
+
+                           <div style={{ width: '100%', height: '150px', border: '1px solid #E2E8F0', borderRadius: '4px', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+                              <p style={{ fontSize: '0.625rem', color: '#94A3B8', fontWeight: 800, letterSpacing: '0.1em' }}>DETALLE DE ITEMS Y ESPECIFICACIONES TÉCNICAS</p>
+                           </div>
+                        </div>
+
+                       {/* Footer / Terms */}
+                       <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#F8FAFC', borderLeft: '4px solid var(--color-maroon)' }}>
+                          <p style={{ fontSize: '0.625rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--color-maroon)' }}>NOTAS DE LA PROPUESTA:</p>
+                          <p style={{ fontSize: '0.625rem', lineHeight: 1.6, color: '#475569' }}>{config.terminos_condiciones}</p>
+                       </div>
                     </div>
                  </div>
               </div>

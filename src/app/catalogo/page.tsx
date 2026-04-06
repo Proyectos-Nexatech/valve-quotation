@@ -16,6 +16,7 @@ interface PriceItem {
   servicio: string;
   ubicacion: string;
   costo_base: number | string;
+  duracion?: number | string;
 }
 
 const VALVE_TYPES: Record<string, string> = {
@@ -50,7 +51,8 @@ export default function CatalogoPricingPage() {
     rating: '',
     servicio: '',
     ubicacion: '',
-    costo_base: ''
+    costo_base: '',
+    duracion: ''
   });
 
   useEffect(() => {
@@ -93,7 +95,8 @@ export default function CatalogoPricingPage() {
           rating: addForm.rating,
           servicio: addForm.servicio,
           ubicacion: addForm.ubicacion,
-          costo_base: parseFloat(addForm.costo_base as string)
+          costo_base: parseFloat(addForm.costo_base as string),
+          duracion: parseInt(addForm.duracion as string) || 0
         }])
         .select()
         .single();
@@ -127,7 +130,8 @@ export default function CatalogoPricingPage() {
           rating: editForm.rating,
           servicio: editForm.servicio,
           ubicacion: editForm.ubicacion,
-          costo_base: parseFloat(editForm.costo_base as string)
+          costo_base: parseFloat(editForm.costo_base as string),
+          duracion: parseInt(editForm.duracion as string) || 0
         })
         .eq('id', id);
 
@@ -209,6 +213,7 @@ export default function CatalogoPricingPage() {
     try {
       const updates: any = { ...bulkEditForm };
       if (updates.costo_base) updates.costo_base = parseFloat(updates.costo_base as string);
+      if (updates.duracion) updates.duracion = parseInt(updates.duracion as string);
 
       const { error } = await supabase
         .from('tarifario')
@@ -235,11 +240,11 @@ export default function CatalogoPricingPage() {
     if (!window.confirm('¿Deseas descargar la plantilla base para el tarifario?')) return;
     
     // Headers in Spanish for the user
-    const headers = 'Tipo_Valvula;Tamaño;Rating;Servicio;Ubicacion;Costo_Base\n';
+    const headers = 'Tipo_Valvula;Tamaño;Rating;Servicio;Ubicacion;Costo_Base;Duracion\n';
     const examples = [
-      'manual;2";150#;Mantenimiento preventivo;Taller;150000',
-      'control;4";300#;Calibración técnica;Campo;450000',
-      'safety;1";600#;Prueba de disparo;Taller;280000'
+      'manual;2";150#;Mantenimiento preventivo;Taller;150000;2',
+      'control;4";300#;Calibración técnica;Campo;450000;4',
+      'safety;1";600#;Prueba de disparo;Taller;280000;1'
     ].join('\n');
     
     // Add UTF-8 BOM for Excel compatibility with accents
@@ -282,8 +287,8 @@ export default function CatalogoPricingPage() {
         const delimiter = line.includes(';') ? ';' : ',';
         const columns = line.split(delimiter);
         
-        if (columns.length >= 5) {
-          const [tipo, tamano, rating, servicio, ubicacion, costo] = columns;
+        if (columns.length >= 6) {
+          const [tipo, tamano, rating, servicio, ubicacion, costo, duracion] = columns;
           
           if (tipo && servicio && (costo || ubicacion)) {
             dataToInsert.push({
@@ -292,7 +297,8 @@ export default function CatalogoPricingPage() {
               rating: rating?.trim() || '',
               servicio: servicio.trim(),
               ubicacion: ubicacion?.trim() || '',
-              costo_base: parseFloat((costo || ubicacion || '').trim().replace(',', '.')) || 0 
+              costo_base: parseFloat((costo || ubicacion || '').trim().replace(',', '.')) || 0,
+              duracion: parseInt((duracion || '0').trim()) || 0
             });
           }
         }
@@ -364,7 +370,7 @@ export default function CatalogoPricingPage() {
                    CREATE TABLE tarifario (<br />
                    &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br />
                    &nbsp;&nbsp;tipo_valvula text, tamano text, rating text,<br />
-                   &nbsp;&nbsp;servicio text, ubicacion text, costo_base numeric,<br />
+                   &nbsp;&nbsp;servicio text, ubicacion text, costo_base numeric, duracion integer DEFAULT 0,<br />
                    &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br />
                    );
                 </div>
@@ -415,6 +421,7 @@ export default function CatalogoPricingPage() {
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TAMAÑO</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>RATING</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>DESCRIPCIÓN SERVICIO</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>DURACIÓN (HORAS)</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>UBICACIÓN</th>
                    <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>COSTO BASE</th>
                    <th style={{ padding: '1.25rem 2rem', textAlign: 'right', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>ACCIONES</th>
@@ -443,6 +450,10 @@ export default function CatalogoPricingPage() {
                      </td>
                      <td style={{ padding: '1.5rem 1rem' }}>
                         <input placeholder='Servicio técnico...' value={addForm.servicio} onChange={(e) => setAddForm({ ...addForm, servicio: e.target.value })}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
+                     </td>
+                     <td style={{ padding: '1.5rem 1rem' }}>
+                        <input type="number" placeholder='Horas' value={addForm.duracion} onChange={(e) => setAddForm({ ...addForm, duracion: e.target.value })}
                           style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
                      </td>
                      <td style={{ padding: '1.5rem 1rem' }}>
@@ -502,6 +513,11 @@ export default function CatalogoPricingPage() {
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
                           </td>
                           <td style={{ padding: '1.5rem 1rem' }}>
+                             <input type="number" value={editForm.duracion} onChange={(e) => setEditForm({ ...editForm, duracion: e.target.value })}
+                               style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
+                             <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>Horas</span>
+                          </td>
+                          <td style={{ padding: '1.5rem 1rem' }}>
                              <input value={editForm.ubicacion || ''} onChange={(e) => setEditForm({ ...editForm, ubicacion: e.target.value })}
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
                           </td>
@@ -533,6 +549,7 @@ export default function CatalogoPricingPage() {
                              <span style={{ fontSize: '0.7rem', fontWeight: 900, backgroundColor: '#F8FAFC', padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #E2E8F0' }}>{item.rating || '—'}</span>
                           </td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>{item.servicio}</td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-maroon)' }}>{item.duracion || 0} H</td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-midnight)' }}>{item.ubicacion || '—'}</td>
                           <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 900, color: '#111827' }}>
                              $ {parseFloat(item.costo_base as string).toLocaleString('es-CO')}
@@ -688,6 +705,13 @@ export default function CatalogoPricingPage() {
                     <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>UBICACIÓN</label>
                     <input 
                       placeholder='No cambiar' value={bulkEditForm.ubicacion || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, ubicacion: e.target.value })}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>DURACIÓN (HORAS)</label>
+                    <input 
+                      type="number" placeholder='No cambiar' value={bulkEditForm.duracion || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, duracion: e.target.value })}
                       style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
                   </div>
 

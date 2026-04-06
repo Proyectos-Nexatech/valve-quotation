@@ -108,85 +108,172 @@ export default function CotizacionesListPage() {
     }
   };
 
+  const parseIndustrialSize = (str: string): number => {
+    if (!str) return 0;
+    let clean = str.replace(/"/g, '').trim().toLowerCase();
+    const parts = clean.split(/[\s-]+/);
+    let total = 0;
+    for (const p of parts) {
+      if (p.includes('/')) {
+        const subParts = p.split(/[\-]+/);
+        if (subParts.length > 1) {
+           total += parseFloat(subParts[0]);
+           const [num, den] = subParts[1].split('/').map(Number);
+           if (den) total += num / den;
+        } else {
+           const [num, den] = p.split('/').map(Number);
+           if (den) total += num / den;
+        }
+      } else {
+        const val = parseFloat(p);
+        if (!isNaN(val)) total += val;
+      }
+    }
+    return total;
+  };
+
+  const decodeRange = (rawStr: string): { min: number, max: number } | null => {
+    const str = rawStr.replace(/"/g, '').trim().toLowerCase();
+    if (str.includes('hasta')) {
+      const parts = str.split('hasta');
+      return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
+    }
+    if (str.includes(' - ')) {
+       const parts = str.split(' - ');
+       return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
+    }
+    if (str.includes('-')) {
+       const parts = str.split('-');
+       if (parts.length === 3) {
+          return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1] + '-' + parts[2]) };
+       }
+       return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[parts.length-1]) };
+    }
+    return null;
+  };
+
   const downloadPDF = async (request: any) => {
     setDownloadingId(request.id);
     try {
-      // 1. Obtener items
-      const { data: items, error } = await supabase
-        .from('items_solicitud')
-        .select('*')
-        .eq('solicitud_id', request.id);
+      // 1. Obtener Datos
+      const [{ data: items }, { data: catalogItems }, { data: config }] = await Promise.all([
+        supabase.from('items_solicitud').select('*').eq('solicitud_id', request.id),
+        supabase.from('tarifario').select('*'),
+        supabase.from('configuracion_global').select('*').eq('id', 1).single()
+      ]);
 
-      if (error) throw error;
+      if (!items || !catalogItems || !config) throw new Error("Datos incompletos");
 
-      // 2. Obtener Configuración Global
-      const { data: config, error: configError } = await supabase
-        .from('configuracion_global')
-        .select('*')
-        .eq('id', 1)
-        .single();
-      
-      if (configError) throw configError;
+      // 2. Enriquecer items para el PDF (Igual que en Solicitudes Detail)
+      const enrichedItems = items.map(item => {
+        const itemSizeNum = parseIndustrialSize(item.especificaciones?.nominalSize);
+        const itemRatingNum = parseFloat(item.especificaciones?.rating?.replace(/[^0-9.]/g, '') || '0');
+
+        const potentialMatches = catalogItems.filter(c => {
+          const typeMap: Record<string, string> = { 'manual': 'manual', 'safety': 'seguridad', 'on-off': 'on', 'control': 'control' };
+          const catType = (c.tipo_valvula || '').toLowerCase();
+          const itemType = typeMap[item.tipo_valvula] || item.tipo_valvula;
+          if (!catType.includes(itemType)) return false;
+
+          let sameSize = false;
+          const range = decodeRange(c.tamano || '');
+          if (range) {
+             sameSize = (itemSizeNum >= range.min && itemSizeNum <= range.max);
+          } else {
+             sameSize = parseIndustrialSize(c.tamano) === itemSizeNum;
+          }
+          if (!sameSize) return false;
+
+          let sameRating = false;
+          const rawRating = (c.rating || '').toString().toLowerCase();
+          if (rawRating.includes('-') || rawRating.includes(',')) {
+             const parts = rawRating.split(/[\s\-,/]+/);
+             const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, '')));
+             const min = Math.min(...ratings);
+             const max = Math.max(...ratings);
+             sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+          } else {
+             sameRating = parseFloat(rawRating.replace(/[^0-9.]/g, '')) === itemRatingNum;
+          }
+          return sameRating;
+        });
+
+        const itemServ = (item.servicio || '').toLowerCase();
+        const serviceMatch = potentialMatches.find(c => {
+           const catServ = (c.servicio || '').toLowerCase();
+           const isMaint = itemServ.includes('mantenimiento') && (catServ.includes('mantenimiento') || catServ.includes('reparación'));
+           const isCert = (itemServ.includes('certifica') || itemServ.includes('prueba')) && (catServ.includes('certifica') || catServ.includes('prueba'));
+           return isMaint || isCert || catServ.includes(itemServ) || itemServ.includes(catServ);
+        });
+
+        const match = serviceMatch || potentialMatches[0];
+        const finalPrice = item.precio_unitario_cop || (match ? match.costo_base : 850000);
+        const finalDur = item.duracion || (match ? match.duracion : 0);
+
+        return { ...item, precio_unitario_cop: finalPrice, duracion: finalDur };
+      });
 
       // 3. Generar PDF
       const doc = new jsPDF();
       
-      // Header: Logo / Company Info
+      // Header
       if (config.logo_url) {
-        try {
-          const img = new Image();
-          img.src = config.logo_url;
-          // Wait for image load or use base64 if needed. For simplicity assuming direct url works in jspdf if CORS ok
-          doc.addImage(config.logo_url, 'PNG', 20, 15, 35, 35);
-        } catch (e) {
-          console.error("Logo could not be loaded into PDF", e);
-        }
+        try { doc.addImage(config.logo_url, 'PNG', 20, 15, 35, 35); } catch (e) { console.error(e); }
       }
 
       doc.setFontSize(18);
       doc.setTextColor(20, 20, 20);
       doc.setFont('helvetica', 'bold');
-      doc.text(config.razon_social || 'VALVULAS DE BUSTILLO INGENIERIA SAS', 65, 30);
+      doc.text(config.razon_social || 'Bustillo Ingenieria SAS', 65, 30);
       
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       doc.setFont('helvetica', 'normal');
       doc.text(`NIT: ${config.nit || '900.XXX.XXX-X'}`, 65, 37);
-      doc.text(`${config.direccion || ''}, ${config.ciudad || ''}`, 65, 42);
-      doc.text(`Tel: ${config.telefono_contacto || ''} | Email: ${config.email_contacto || ''}`, 65, 47);
       
       doc.setFontSize(14);
-      doc.setTextColor(239, 68, 68); // Red-ish for Folio
+      doc.setTextColor(239, 68, 68);
       doc.setFont('helvetica', 'bold');
-      doc.text(`COTIZACIÓN: ${request.folio}`, 140, 30);
+      doc.text(`COTIZACIÓN: ${request.folio}`, 65, 45); // Debajo del NIT
       
-      // Datos del Cliente
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${config.direccion || ''}, ${config.ciudad || 'Cartagena, Colombia'}`, 65, 52);
+      doc.text(`Tel: ${config.telefono_contacto || ''} | Email: ${config.email_contacto || ''}`, 65, 57);
+      
+      // Datos del Cliente (Recibido de)
       doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('RECIBIDO DE:', 20, 55);
+      doc.text('RECIBIDO DE:', 20, 75);
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.text(`${request.cliente_nombre}`, 20, 62);
-      doc.text(`${request.cliente_empresa}`, 20, 67);
-      doc.text(`Tel: ${request.cliente_telefono}`, 20, 72);
+      doc.text(`${request.cliente_nombre}`, 20, 82);
+      doc.text(`${request.cliente_empresa} - NIT: ${request.cliente_nit || 'N/A'}`, 20, 87);
+      doc.text(`Tel: ${request.cliente_telefono} | Email: ${request.cliente_email}`, 20, 92);
       
-      // Info Cotización
-      doc.text(`Fecha: ${new Date(request.created_at).toLocaleDateString()}`, 140, 55);
-      doc.text(`Prioridad: ${request.prioridad || 'Normal'}`, 140, 60);
+      // Info Cotización (Derecha)
+      doc.text(`Fecha: ${new Date(request.created_at).toLocaleDateString()}`, 145, 75);
+      doc.text(`Prioridad: ${request.prioridad || 'Normal'}`, 145, 80);
 
-      // Tabla de Items
-      const tableData = items?.map((item, index) => [
+      const subtotal = enrichedItems.reduce((acc, i) => acc + (i.precio_unitario_cop * i.cantidad), 0);
+      const iva = subtotal * 0.19;
+      const totalFinal = subtotal + iva;
+
+      const tableData = enrichedItems.map((item, index) => [
         (index + 1).toString().padStart(2, '0'),
         item.cantidad.toString(),
-        `${VALVE_LABELS[item.tipo_valvula] || item.tipo_valvula} - ${item.especificaciones?.nominalSize} ${item.especificaciones?.rating}`,
-        '$ 850.000', // Mock price for now
-        `$ ${(850000 * item.cantidad).toLocaleString()}`
-      ]) || [];
+        `${VALVE_LABELS[item.tipo_valvula] || item.tipo_valvula} - ${item.especificaciones?.nominalSize} ${item.especificaciones?.rating}\n(${item.servicio})`,
+        `$ ${Math.round(item.precio_unitario_cop).toLocaleString()}`,
+        `$ ${Math.round(item.precio_unitario_cop * item.cantidad).toLocaleString()}`
+      ]);
+
+      const totalHours = enrichedItems.reduce((acc, item) => acc + (item.duracion * item.cantidad), 0);
+      const totalDays = Math.ceil(totalHours / 8);
 
       autoTable(doc, {
-        startY: 85,
+        startY: 100,
         head: [['ÍTEM', 'CANT', 'ESPECIFICACIONES TÉCNICAS', 'P. UNITARIO', 'SUBTOTAL']],
         body: tableData,
         theme: 'striped',
@@ -196,24 +283,41 @@ export default function CotizacionesListPage() {
       });
 
       // Totales
-      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
-      doc.text('TOTAL DE LA PROPUESTA (COP):', 110, finalY);
+      doc.setFontSize(10);
+      
+      doc.text('DURACIÓN ESTIMADA:', 110, currentY);
+      doc.text(`${totalDays} DÍAS (8h/turno)`, 160, currentY);
+
+      currentY += 10;
+      doc.setFontSize(9);
+      doc.text('SUBTOTAL:', 110, currentY);
+      doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 160, currentY);
+
+      currentY += 7;
+      doc.text('IVA (19%):', 110, currentY);
+      doc.text(`$ ${Math.round(iva).toLocaleString()}`, 160, currentY);
+
+      currentY += 10;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('TOTAL DE LA PROPUESTA (COP):', 110, currentY);
+      
+      currentY += 10;
       doc.setFontSize(16);
-      doc.text('$ 15.172.500', 140, finalY + 10); // Mock final total for now matching your logic
+      doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 145, currentY); 
 
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      const splitTerms = doc.splitTextToSize(config.terminos_condiciones || 'Propuesta técnica sujeta a términos y condiciones.', 170);
+      const splitTerms = doc.splitTextToSize(config.terminos_condiciones || 'Esta cotización tiene una validez de 30 días.', 170);
       doc.text(splitTerms, 105, 275, { align: 'center' });
 
-      // Download
       doc.save(`${request.folio}_cotizacion.pdf`);
-
     } catch (err) {
-      console.error('Error generating PDF:', err);
-      alert('Error al generar el PDF.');
+      console.error('Error:', err);
+      alert('Error al generar PDF.');
     } finally {
       setDownloadingId(null);
     }

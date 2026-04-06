@@ -29,6 +29,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [trm, setTrm] = useState('4250.00');
   const [discount, setDiscount] = useState('0');
   const [ivaRate, setIvaRate] = useState('19');
+  const [catalogItems, setCatalogItems] = useState<any[]>([]);
 
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -67,6 +68,9 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
         setIvaRate(configData.iva.toString());
         setTrm(configData.trm_actual.toString());
       }
+
+      const { data: catData } = await supabase.from('tarifario').select('*');
+      setCatalogItems(catData || []);
 
     } catch (err) {
       console.error('Error fetching details:', err);
@@ -121,17 +125,168 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
+
   const getBasePrice = (type: string) => {
     if (type === 'control') return 1912500;
     if (type === 'safety') return 1190000;
     return 850000;
   };
 
+  const parseIndustrialSize = (str: string): number => {
+    if (!str) return 0;
+    // Limpiar comillas y normalizar
+    let clean = str.replace(/"/g, '').trim().toLowerCase();
+    
+    // CASO ESPECIAL: 2-1/2 -> 2 + 0.5
+    // Si viene solo un patrón de fracción mixta
+    if (/^[0-9]+\s*[\-\s]\s*[0-9]+\/[0-9]+$/.test(clean)) {
+       const parts = clean.split(/[\-\s]+/);
+       const whole = parseFloat(parts[0]);
+       const [num, den] = parts[1].split('/').map(Number);
+       return whole + (num / den);
+    }
+
+    // Un enfoque más simple pero robusto: sumar todas las partes numéricas/fraccionarias
+    // "1/2" -> 0.5
+    // "2" -> 2
+    // total = 2.5
+    const parts = clean.split(/[\s]+/); // Solo por espacios para fracciones mixtas con espacio
+    let total = 0;
+    for (const p of parts) {
+      if (p.includes('/')) {
+        const subParts = p.split(/[\-]+/); // guión como separador de entera-fracción
+        if (subParts.length > 1) {
+           total += parseFloat(subParts[0]);
+           const [num, den] = subParts[1].split('/').map(Number);
+           if (den) total += num / den;
+        } else {
+           const [num, den] = p.split('/').map(Number);
+           if (den) total += num / den;
+        }
+      } else {
+        const val = parseFloat(p);
+        if (!isNaN(val)) total += val;
+      }
+    }
+    return total;
+  };
+
+  const decodeRange = (rawStr: string): { min: number, max: number } | null => {
+    const str = rawStr.replace(/"/g, '').trim().toLowerCase();
+    
+    // Caso "X hasta Y"
+    if (str.includes('hasta')) {
+      const parts = str.split('hasta');
+      return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
+    }
+
+    // Caso "1/2-2-1/2" o "1/2 - 2-1/2"
+    // Buscamos el guión principal de rango. 
+    // Si hay espacios, preferimos el guión con espacios.
+    if (str.includes(' - ')) {
+       const parts = str.split(' - ');
+       return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
+    }
+
+    // Si no hay espacios, pero hay múltiples guiones (ej: 1/2-2-1/2)
+    // El guión de rango suele ser el que no forma parte de una fracción mixta
+    if (str.includes('-')) {
+       // Si hay 3 números separados por guiones: A-B-C -> probablemente (A/D)-(B-C/D)
+       // O (A-B)-C... muy ambiguo.
+       // Específicamente para el caso del cliente: 1/2" -2-1/2"
+       const parts = str.split('-');
+       if (parts.length === 3) {
+          // Caso [1/2, 2, 1/2] -> Min 1/2, Max 2+1/2
+          return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1] + '-' + parts[2]) };
+       }
+       
+       const min = parseIndustrialSize(parts[0]);
+       const max = parseIndustrialSize(parts[parts.length-1]);
+       return { min, max };
+    }
+
+    return null;
+  };
+
+  const getEnrichedItemValue = (item: any, field: 'precio_unitario_cop' | 'duracion') => {
+    if (item[field] !== null && item[field] !== undefined && item[field] !== 0) return item[field];
+    
+    const itemSizeNum = parseIndustrialSize(item.especificaciones?.nominalSize);
+    const itemRatingNum = parseFloat(item.especificaciones?.rating?.replace(/[^0-9.]/g, '') || '0');
+
+    // 1. Filtrar por Tipo, Tamaño y Rating primero
+    const potentialMatches = catalogItems.filter(c => {
+      // TIPO
+      const typeMap: Record<string, string> = { 'manual': 'manual', 'safety': 'seguridad', 'on-off': 'on', 'control': 'control' };
+      const catType = (c.tipo_valvula || '').toLowerCase();
+      const itemType = typeMap[item.tipo_valvula] || item.tipo_valvula;
+      if (!catType.includes(itemType)) return false;
+
+      // MEDIDA (Manejo de rangos como "3 hasta 6", "1/2 - 2", "1/2" - 2-1/2")
+      let sameSize = false;
+      const range = decodeRange(c.tamano || '');
+      if (range) {
+         sameSize = (itemSizeNum >= range.min && itemSizeNum <= range.max);
+      } else {
+         sameSize = parseIndustrialSize(c.tamano) === itemSizeNum;
+      }
+      if (!sameSize) return false;
+
+      // RATING (Manejo de 150-300 como "aplica para 150 y 300" o rangos)
+      let sameRating = false;
+      const rawRating = (c.rating || '').toString().toLowerCase();
+      if (rawRating.includes('-') || rawRating.includes(',')) {
+         const parts = rawRating.split(/[\s\-,/]+/);
+         const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, '')));
+         const min = Math.min(...ratings);
+         const max = Math.max(...ratings);
+         // Si es un rango explícito o una lista (ej: "150, 300, 600")
+         sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+      } else {
+         sameRating = parseFloat(rawRating.replace(/[^0-9.]/g, '')) === itemRatingNum;
+      }
+      
+      return sameRating;
+    });
+
+    if (potentialMatches.length === 0) {
+      if (field === 'precio_unitario_cop') return getBasePrice(item.tipo_valvula);
+      return 0;
+    }
+
+    // 2. Priorizar por SERVICIO
+    const itemServ = (item.servicio || '').toLowerCase();
+    const serviceMatch = potentialMatches.find(c => {
+      const catServ = (c.servicio || '').toLowerCase();
+      const isMaint = itemServ.includes('mantenimiento') && (catServ.includes('mantenimiento') || catServ.includes('reparación') || catServ.includes('servicio'));
+      const isCert = (itemServ.includes('certifica') || itemServ.includes('prueba')) && (catServ.includes('certifica') || catServ.includes('prueba') || catServ.includes('test'));
+      return isMaint || isCert || catServ.includes(itemServ) || itemServ.includes(catServ);
+    });
+
+    const finalMatch = serviceMatch || potentialMatches[0];
+    
+    if (finalMatch) {
+       const baseVal = finalMatch[field === 'precio_unitario_cop' ? 'costo_base' : 'duracion'];
+       // Si es duración, multiplicar por cantidad
+       if (field === 'duracion') return (baseVal || 0); // La suma total se hace con cantidad en otros lados
+       return baseVal;
+    }
+    
+    if (field === 'precio_unitario_cop') return getBasePrice(item.tipo_valvula);
+    return 0;
+  };
+
   const calculateSubtotal = () => {
-    return items.reduce((acc, item) => acc + (getBasePrice(item.tipo_valvula) * item.cantidad), 0);
+    return items.reduce((acc, item) => acc + (getEnrichedItemValue(item, 'precio_unitario_cop') * item.cantidad), 0);
+  };
+
+  const calculateTotalDurationDays = () => {
+    const totalHours = items.reduce((acc, item) => acc + (getEnrichedItemValue(item, 'duracion') * item.cantidad), 0);
+    return Math.ceil(totalHours / 8); 
   };
 
   const subtotal = calculateSubtotal();
+  const totalDays = calculateTotalDurationDays();
   const discountVal = subtotal * (parseInt(discount) / 100);
   const baseGravable = subtotal - discountVal;
   const iva = baseGravable * (parseInt(ivaRate) / 100);
@@ -209,6 +364,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>CANT.</th>
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DESCRIPCIÓN TÉCNICA</th>
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>COSTO BASE (UND)</th>
+                          <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DURACIÓN (HORAS)</th>
                           <th style={{ padding: '1rem 2.5rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>SUBTOTAL</th>
                         </tr>
                     </thead>
@@ -225,8 +381,9 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                   {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Marca: {item.especificaciones?.brand || 'Indeterminada'} | SN: {item.especificaciones?.serialNumber || 'N/A'}
                                 </p>
                             </td>
-                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(getBasePrice(item.tipo_valvula))}</td>
-                            <td style={{ padding: '1.5rem 2.5rem', fontSize: '0.875rem', fontWeight: 800 }}>{formatCurrency(getBasePrice(item.tipo_valvula) * item.cantidad)}</td>
+                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(getEnrichedItemValue(item, 'precio_unitario_cop'))}</td>
+                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-maroon)' }}>{getEnrichedItemValue(item, 'duracion') * item.cantidad} H</td>
+                            <td style={{ padding: '1.5rem 2.5rem', fontSize: '0.875rem', fontWeight: 800 }}>{formatCurrency(getEnrichedItemValue(item, 'precio_unitario_cop') * item.cantidad)}</td>
                           </tr>
                         ))}
                     </tbody>
@@ -234,6 +391,10 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 <div style={{ backgroundColor: 'white', padding: '3rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end', borderTop: '2px solid var(--color-surface-low)' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
+                      <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>DURACIÓN TOTAL ESTIMADA (TURNOS 8H)</span>
+                      <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-maroon)' }}>{totalDays} DÍAS</span>
+                   </div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
                       <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>Subtotal de Equipos</span>
                       <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{formatCurrency(subtotal)}</span>
@@ -285,9 +446,6 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--color-on-surface-variant)' }}>
                        <Mail size={16} /> <span style={{ fontSize: '0.875rem', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden' }}>{request.cliente_email}</span>
                     </div>
-                    <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', fontWeight: 900, padding: '1rem' }}>
-                       <Send size={18} /> ENVIAR AL CLIENTE
-                    </button>
                 </div>
              </div>
 
@@ -384,9 +542,6 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                    >
                       <Download size={18} /> PREVISUALIZAR PDF
                    </button>
-                   <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', fontWeight: 900, padding: '1rem' }}>
-                      <Send size={18} /> ENVIAR AL CLIENTE
-                   </button>
                    <p style={{ fontSize: '0.625rem', opacity: 0.5, textAlign: 'center' }}>EL PDF SE AJUSTA A LA TRM Y DESCUENTO SELECCIONADOS</p>
                 </div>
              </div>
@@ -448,8 +603,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                     <tr key={item.id} style={{ borderBottom: '1px solid #EEE' }}>
                                        <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
                                        <td style={{ padding: '0.5rem' }}>Reparación Técnica Válvula {VALVE_TYPE_LABELS[item.tipo_valvula]}</td>
-                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(getBasePrice(item.tipo_valvula))}</td>
-                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(getBasePrice(item.tipo_valvula) * item.cantidad)}</td>
+                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(item.precio_unitario_cop || getBasePrice(item.tipo_valvula))}</td>
+                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency((item.precio_unitario_cop || getBasePrice(item.tipo_valvula)) * item.cantidad)}</td>
                                     </tr>
                                   ))}
                                </tbody>
@@ -460,7 +615,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                              <p style={{ fontSize: '0.75rem' }}>Subtotal: {formatCurrency(subtotal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>Descuento ({discount}%): -{formatCurrency(discountVal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>IVA ({ivaRate}%): {formatCurrency(iva)}</p>
-                             <p style={{ fontSize: '1rem', fontWeight: 900, marginTop: '1rem', borderTop: '2px solid black', paddingTop: '0.5rem' }}>TOTAL: {formatCurrency(total)}</p>
+                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>DURACIÓN: {totalDays} DÍAS (8h/turno)</p>
+                             <p style={{ fontSize: '1rem', fontWeight: 900, marginTop: '0.5rem', borderTop: '2px solid black', paddingTop: '0.5rem' }}>TOTAL: {formatCurrency(total)}</p>
                          </div>
                     </div>
                   </div>
