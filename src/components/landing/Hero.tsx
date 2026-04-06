@@ -39,7 +39,7 @@ export const Hero = () => {
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link href="/solicitar" className="btn" style={{ 
+          <Link href="#servicios" className="btn" style={{ 
             backgroundColor: 'white', color: 'var(--color-maroon)', padding: '1rem 2.5rem', 
             borderRadius: '2px', fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase',
             display: 'inline-flex', alignItems: 'center', gap: '0.75rem', transition: 'all 0.3s ease',
@@ -48,21 +48,13 @@ export const Hero = () => {
             Nuestros Servicios <span style={{ fontSize: '1.2rem' }}>›</span>
           </Link>
           
-          <Link href="/login" className="btn" style={{ 
-            backgroundColor: 'transparent', color: 'white', border: '2px solid white', 
-            padding: '1rem 2.5rem', borderRadius: '2px', fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase',
-            transition: 'all 0.3s ease'
-          }}>
-            Acceso Personal
-          </Link>
-
-          <button className="btn" style={{ 
+          <Link href="#portafolio" className="btn" style={{ 
             backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '2px solid rgba(255,255,255,0.2)', 
             padding: '1rem 2.5rem', borderRadius: '2px', fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase',
-            transition: 'all 0.3s ease'
+            display: 'inline-flex', alignItems: 'center', transition: 'all 0.3s ease'
           }}>
             Ver Portafolio
-          </button>
+          </Link>
         </div>
       </div>
     </section>

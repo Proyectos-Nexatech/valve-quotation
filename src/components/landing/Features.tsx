@@ -1,30 +1,36 @@
-import { Wrench, ShieldAlert, Power, Activity, Gauge } from 'lucide-react';
+import { 
+  ISAGeneralValve, 
+  ISASafetyValve, 
+  ISABallValve, 
+  ISAControlValve, 
+  ISAPressureVacuumValve 
+} from '../icons/ISAValveIcons';
 
 const FEATURE_DATA = [
   {
     title: 'Válvulas Manuales',
     description: 'Mantenimiento preventivo, cambio de empaquetaduras y pruebas de estanqueidad certificadas.',
-    icon: <Wrench size={32} />,
+    icon: <ISAGeneralValve size={32} />,
   },
   {
     title: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
     description: 'Inspección, calibración y certificación bajo norma API 527 para alivio de presión profesional.',
-    icon: <ShieldAlert size={32} />,
+    icon: <ISASafetyValve size={32} />,
   },
   {
     title: 'VÁLVULAS ON/OFF',
     description: 'Pruebas de cierre (Seat Leakage) según ANSI/FCI 70-2 para válvulas de corte rápido.',
-    icon: <Power size={32} />,
+    icon: <ISABallValve size={32} />,
   },
   {
     title: 'Válvulas de Control',
     description: 'Diagnóstico avanzado de actuadores y posicionadores con reporte de banda muerta especializado.',
-    icon: <Activity size={32} />,
+    icon: <ISAControlValve size={32} />,
   },
   {
     title: 'VÁLVULAS PRESIÓN-VACÍO',
     description: 'Pruebas de hermeticidad y calibración de venteos para tanques de almacenamiento e industria.',
-    icon: <Gauge size={32} />,
+    icon: <ISAPressureVacuumValve size={32} />,
   }
 ];
 

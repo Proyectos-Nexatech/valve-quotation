@@ -52,7 +52,7 @@ export const Footer = () => {
       backgroundColor: '#0a0a0a',
       color: 'white',
       display: 'grid',
-      gridTemplateColumns: '1.5fr repeat(3, 1fr)',
+      gridTemplateColumns: '1.5fr repeat(2, 1fr)',
       gap: '5rem'
     }}>
       <div>
@@ -73,6 +73,9 @@ export const Footer = () => {
         <ul style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <li><Link href="/" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', transition: 'color 0.3s' }}>INICIO</Link></li>
           <li><Link href="#servicios" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>SERVICIOS</Link></li>
+          <li><Link href="#portafolio" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>PORTAFOLIO</Link></li>
+          <li><Link href="#como-funciona" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>CÓMO FUNCIONA</Link></li>
+          <li><Link href="#beneficios" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>BENEFICIOS</Link></li>
           <li><Link href="/solicitar" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>NUEVA SOLICITUD</Link></li>
           <li><Link href="/login" style={{ fontSize: '0.875rem', color: 'var(--color-red-bright)', fontWeight: 700 }}>ACCESO PERSONAL</Link></li>
         </ul>
@@ -86,15 +89,7 @@ export const Footer = () => {
         </ul>
       </div>
 
-      <div>
-        <h4 className="display-font" style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.2em', marginBottom: '2rem', color: 'white' }}>IDENTIDAD</h4>
-        <div style={{ padding: '1.5rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-red-bright)', marginBottom: '0.5rem' }}>CERTIFIED ENGINEER</p>
-           <p style={{ fontSize: '0.625rem', opacity: 0.4 }}>ASOCIACIÓN INTERNACIONAL DE INGENIERÍA MECÁNICA</p>
-        </div>
-      </div>
-
-      <div style={{ gridColumn: 'span 4', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '3rem', marginTop: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ gridColumn: 'span 3', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '3rem', marginTop: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>© 2026 VALVEQUOTE. TODOS LOS DERECHOS RESERVADOS.</p>
          <div style={{ display: 'flex', gap: '2rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-maroon)' }}>
             <span>TWITTER</span>

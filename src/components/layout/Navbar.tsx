@@ -8,7 +8,7 @@ export const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['inicio', 'servicios', 'como-funciona', 'beneficios'];
+      const sections = ['inicio', 'servicios', 'portafolio', 'como-funciona', 'beneficios'];
       const scrollPosition = window.scrollY + 150; // Offset para detectar antes de llegar al tope
 
       for (const section of sections) {
@@ -71,6 +71,13 @@ export const Navbar = () => {
           style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-slate-600)', letterSpacing: '0.15em', textTransform: 'uppercase' }}
         >
           SERVICIOS
+        </Link>
+        <Link 
+          href="#portafolio" 
+          className={`nav-link ${activeSection === 'portafolio' ? 'active' : ''}`}
+          style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-slate-600)', letterSpacing: '0.15em', textTransform: 'uppercase' }}
+        >
+          PORTAFOLIO
         </Link>
         <Link 
           href="#como-funciona" 
