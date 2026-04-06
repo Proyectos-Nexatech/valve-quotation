@@ -15,6 +15,7 @@ const STATUS_FILTERS = [
   { id: 'pendiente', label: 'Pendientes', color: '#F59E0B' },
   { id: 'en_proceso', label: 'En Proceso', color: '#3B82F6' },
   { id: 'enviada', label: 'Enviadas', color: '#10B981' },
+  { id: 'adjudicada', label: 'Adjudicadas', color: 'var(--color-midnight)' },
 ];
 
 export default function SolicitudesHistoryPage() {
@@ -218,7 +219,7 @@ export default function SolicitudesHistoryPage() {
                            </td>
                            <td style={{ padding: '1.5rem 1rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 800 }}>
-                                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: req.estado === 'pendiente' ? '#F59E0B' : req.estado === 'en_proceso' ? '#3B82F6' : '#10B981' }} />
+                                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: req.estado === 'pendiente' ? '#F59E0B' : req.estado === 'en_proceso' ? '#3B82F6' : req.estado === 'adjudicada' ? 'var(--color-midnight)' : '#10B981' }} />
                                  {((req.estado || 'Recibido').replace('_', ' ')).toUpperCase()}
                               </div>
                            </td>
@@ -411,7 +412,7 @@ function CalendarView({ requests, currentDate, setCurrentDate }: { requests: any
                   <Link key={req.id} href={`/solicitudes/${req.id}`} style={{ 
                     fontSize: '0.625rem', padding: '0.4rem', borderRadius: '6px', 
                     textDecoration: 'none', color: 'white', fontWeight: 800,
-                    backgroundColor: req.estado === 'pendiente' ? '#F59E0B' : req.estado === 'en_proceso' ? '#3B82F6' : '#10B981',
+                    backgroundColor: req.estado === 'pendiente' ? '#F59E0B' : req.estado === 'en_proceso' ? '#3B82F6' : req.estado === 'adjudicada' ? 'var(--color-midnight)' : '#10B981',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                   }}>
                     {req.folio}

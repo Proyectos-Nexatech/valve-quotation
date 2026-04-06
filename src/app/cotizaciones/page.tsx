@@ -5,7 +5,7 @@ import {
   FileText, Search, Download, Send, 
   CheckCircle2, Clock, Loader2, Filter, Mail, ExternalLink,
   ChevronRight, AlertCircle, List as ListIcon, Calendar as CalendarIcon,
-  ChevronLeft, ChevronRight as ChevronRightIcon, X, Check
+  ChevronLeft, ChevronRight as ChevronRightIcon, X, Check, Activity
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -79,7 +79,7 @@ export default function CotizacionesListPage() {
       const { data, error } = await supabase
         .from('solicitudes')
         .select('*')
-        .in('estado', ['finalizada', 'enviada'])
+        .in('estado', ['finalizada', 'enviada', 'adjudicada'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -103,6 +103,24 @@ export default function CotizacionesListPage() {
       setQuotations(quotations.map(q => q.id === id ? { ...q, estado: 'enviada' } : q));
     } catch (err) {
       console.error('Error actualizando estado:', err);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const markAsAwarded = async (id: string) => {
+    setUpdatingId(id);
+    try {
+      const { error } = await supabase
+        .from('solicitudes')
+        .update({ estado: 'adjudicada' })
+        .eq('id', id);
+
+      if (error) throw error;
+      setQuotations(quotations.map(q => q.id === id ? { ...q, estado: 'adjudicada' } : q));
+    } catch (err) {
+      console.error('Error actualizando estado:', err);
+      alert('Error al marcar como adjudicada.');
     } finally {
       setUpdatingId(null);
     }
@@ -155,7 +173,6 @@ export default function CotizacionesListPage() {
   const downloadPDF = async (request: any) => {
     setDownloadingId(request.id);
     try {
-      // 1. Obtener Datos
       const [{ data: items }, { data: catalogItems }, { data: config }] = await Promise.all([
         supabase.from('items_solicitud').select('*').eq('solicitud_id', request.id),
         supabase.from('tarifario').select('*'),
@@ -164,7 +181,6 @@ export default function CotizacionesListPage() {
 
       if (!items || !catalogItems || !config) throw new Error("Datos incompletos");
 
-      // 2. Enriquecer items para el PDF (Igual que en Solicitudes Detail)
       const enrichedItems = items.map(item => {
         const itemSizeNum = parseIndustrialSize(item.especificaciones?.nominalSize);
         const itemRatingNum = parseFloat(item.especificaciones?.rating?.replace(/[^0-9.]/g, '') || '0');
@@ -213,10 +229,8 @@ export default function CotizacionesListPage() {
         return { ...item, precio_unitario_cop: finalPrice, duracion: finalDur };
       });
 
-      // 3. Generar PDF
       const doc = new jsPDF();
       
-      // Header
       if (config.logo_url) {
         try { doc.addImage(config.logo_url, 'PNG', 20, 15, 35, 35); } catch (e) { console.error(e); }
       }
@@ -234,7 +248,7 @@ export default function CotizacionesListPage() {
       doc.setFontSize(14);
       doc.setTextColor(239, 68, 68);
       doc.setFont('helvetica', 'bold');
-      doc.text(`COTIZACIÓN: ${request.folio}`, 65, 45); // Debajo del NIT
+      doc.text(`COTIZACIÓN: ${request.folio}`, 65, 45);
       
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
@@ -242,7 +256,6 @@ export default function CotizacionesListPage() {
       doc.text(`${config.direccion || ''}, ${config.ciudad || 'Cartagena, Colombia'}`, 65, 52);
       doc.text(`Tel: ${config.telefono_contacto || ''} | Email: ${config.email_contacto || ''}`, 65, 57);
       
-      // Datos del Cliente (Recibido de)
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
@@ -253,7 +266,6 @@ export default function CotizacionesListPage() {
       doc.text(`${request.cliente_empresa} - NIT: ${request.cliente_nit || 'N/A'}`, 20, 87);
       doc.text(`Tel: ${request.cliente_telefono} | Email: ${request.cliente_email}`, 20, 92);
       
-      // Info Cotización (Derecha)
       doc.text(`Fecha: ${new Date(request.created_at).toLocaleDateString()}`, 145, 75);
       doc.text(`Prioridad: ${request.prioridad || 'Normal'}`, 145, 80);
 
@@ -282,11 +294,9 @@ export default function CotizacionesListPage() {
         margin: { left: 20, right: 20 }
       });
 
-      // Totales
       let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      
       doc.text('DURACIÓN ESTIMADA:', 110, currentY);
       doc.text(`${totalDays} DÍAS (8h/turno)`, 160, currentY);
 
@@ -303,12 +313,10 @@ export default function CotizacionesListPage() {
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
       doc.text('TOTAL DE LA PROPUESTA (COP):', 110, currentY);
-      
       currentY += 10;
       doc.setFontSize(16);
       doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 145, currentY); 
 
-      // Footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       const splitTerms = doc.splitTextToSize(config.terminos_condiciones || 'Esta cotización tiene una validez de 30 días.', 170);
@@ -325,7 +333,6 @@ export default function CotizacionesListPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-       {/* Header Section */}
        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
              <h1 className="display-font" style={{ fontSize: '2.25rem', color: 'var(--color-midnight)', marginBottom: '0.5rem' }}>Cotizaciones Generadas</h1>
@@ -435,24 +442,37 @@ export default function CotizacionesListPage() {
                            <td style={{ padding: '2rem 1rem' }}>
                               <span style={{ 
                                 padding: '0.4rem 1rem', borderRadius: '4px', fontSize: '0.625rem', fontWeight: 900,
-                                backgroundColor: q.estado === 'enviada' ? '#E0F2FE' : '#D1FAE5',
-                                color: q.estado === 'enviada' ? '#0369A1' : '#047857'
-                              }}>{q.estado === 'enviada' ? 'ENVIADA' : 'GENERADA'}</span>
+                                backgroundColor: q.estado === 'adjudicada' ? 'var(--color-midnight)' : q.estado === 'enviada' ? '#E0F2FE' : '#D1FAE5',
+                                color: q.estado === 'adjudicada' ? 'white' : q.estado === 'enviada' ? '#0369A1' : '#047857'
+                              }}>{q.estado === 'adjudicada' ? 'ADJUDICADA' : q.estado === 'enviada' ? 'ENVIADA' : 'GENERADA'}</span>
                            </td>
                            <td style={{ padding: '2rem 2.5rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                                  <button onClick={() => downloadPDF(q)} disabled={downloadingId === q.id} className="btn" style={{ padding: '0.6rem', border: '1.5px solid #E2E8F0', color: 'var(--color-midnight)', borderRadius: '4px' }}>
                                     {downloadingId === q.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                                  </button>
                                  <Link href={`/solicitudes/${q.id}`} style={{ padding: '0.6rem 1.2rem', border: '1.5px solid var(--color-midnight)', color: 'var(--color-midnight)', fontSize: '0.7rem', fontWeight: 800, textDecoration: 'none', borderRadius: '4px' }}>DETALLES</Link>
+                                 
                                  {q.estado === 'finalizada' && (
-                                   <button onClick={() => markAsSent(q.id)} disabled={updatingId === q.id} style={{ padding: '0.6rem 1.5rem', backgroundColor: 'black', color: 'white', fontSize: '0.7rem', fontWeight: 900, borderRadius: '4px' }}>
+                                   <button onClick={() => markAsSent(q.id)} disabled={updatingId === q.id} style={{ padding: '0.6rem 1.5rem', backgroundColor: 'black', color: 'white', fontSize: '0.7rem', fontWeight: 900, borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
                                       {updatingId === q.id ? <Loader2 className="animate-spin" size={14} /> : 'ENVIAR AL CLIENTE'}
                                     </button>
                                  )}
+
                                  {q.estado === 'enviada' && (
-                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10B981', fontSize: '0.7rem', fontWeight: 900, padding: '0.6rem 1rem' }}>
-                                      <CheckCircle2 size={16} /> ENVIADA
+                                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10B981', fontSize: '0.7rem', fontWeight: 900, padding: '0.6rem 0.5rem' }}>
+                                         <CheckCircle2 size={16} /> ENVIADA
+                                      </div>
+                                      <button onClick={() => markAsAwarded(q.id)} disabled={updatingId === q.id} style={{ padding: '0.6rem 1rem', backgroundColor: 'var(--color-orange)', color: 'white', fontSize: '0.7rem', fontWeight: 900, borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
+                                         {updatingId === q.id ? <Loader2 className="animate-spin" size={14} /> : 'MARCAR ADJUDICADA'}
+                                      </button>
+                                   </div>
+                                 )}
+
+                                 {q.estado === 'adjudicada' && (
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-midnight)', fontSize: '0.7rem', fontWeight: 900, padding: '0.6rem 1rem' }}>
+                                      <Activity size={16} /> ADJUDICADA (CERRADA)
                                    </div>
                                  )}
                               </div>

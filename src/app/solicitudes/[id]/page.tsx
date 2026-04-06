@@ -312,9 +312,11 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                 <h1 className="display-font" style={{ fontSize: '2.5rem', color: 'var(--color-midnight)' }}>{request.folio}</h1>
                 <span style={{ 
                   backgroundColor: request.estado === 'pendiente' ? '#FEF3C7' : 
-                                 request.estado === 'finalizada' ? '#D1FAE5' : '#EFF6FF',
+                                 request.estado === 'finalizada' ? '#D1FAE5' : 
+                                 request.estado === 'adjudicada' ? 'var(--color-midnight)' : '#EFF6FF',
                   color: request.estado === 'pendiente' ? '#D97706' : 
-                         request.estado === 'finalizada' ? '#059669' : '#3B82F6',
+                         request.estado === 'finalizada' ? '#059669' : 
+                         request.estado === 'adjudicada' ? 'white' : '#3B82F6',
                   fontSize: '0.625rem', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 900, 
                   letterSpacing: '0.1em', fontFamily: 'var(--font-mono)'
                 }}>
