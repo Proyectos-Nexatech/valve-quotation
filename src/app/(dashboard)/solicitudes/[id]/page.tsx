@@ -30,6 +30,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const [discount, setDiscount] = useState('0');
   const [ivaRate, setIvaRate] = useState('19');
   const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [globalConfig, setGlobalConfig] = useState<any>(null);
 
   // Modal states
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -65,6 +66,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
 
       const { data: configData } = await supabase.from('configuracion_global').select('*').eq('id', 1).single();
       if (configData) {
+        setGlobalConfig(configData);
         setIvaRate(configData.iva.toString());
         setTrm(configData.trm_actual.toString());
       }
@@ -127,42 +129,40 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
 
 
   const getBasePrice = (type: string) => {
-    if (type === 'control') return 1912500;
-    if (type === 'safety') return 1190000;
+    const t = String(type || '').toLowerCase();
+    if (t.includes('control')) return 1912500;
+    if (t.includes('safety') || t.includes('seguridad') || t.includes('psv')) return 1190000;
     return 850000;
+  };
+
+  const getBaseDuration = (type: string) => {
+    const t = String(type || '').toLowerCase();
+    if (t.includes('safety') || t.includes('seguridad') || t.includes('psv') || t.includes('alivio')) return 4;
+    return 8;
+  };
+
+  const getSpec = (item: any, field: string) => {
+    if (!item) return '';
+    let specs = item.especificaciones;
+    if (!specs) return '';
+    if (typeof specs === 'string') {
+      try { specs = JSON.parse(specs); } catch (e) { return ''; }
+    }
+    // Permisivo con camelCase y lowercase
+    return specs[field] || specs[field.toLowerCase()] || '';
   };
 
   const parseIndustrialSize = (str: string): number => {
     if (!str) return 0;
-    // Limpiar comillas y normalizar
     let clean = str.replace(/"/g, '').trim().toLowerCase();
     
-    // CASO ESPECIAL: 2-1/2 -> 2 + 0.5
-    // Si viene solo un patrón de fracción mixta
-    if (/^[0-9]+\s*[\-\s]\s*[0-9]+\/[0-9]+$/.test(clean)) {
-       const parts = clean.split(/[\-\s]+/);
-       const whole = parseFloat(parts[0]);
-       const [num, den] = parts[1].split('/').map(Number);
-       return whole + (num / den);
-    }
-
-    // Un enfoque más simple pero robusto: sumar todas las partes numéricas/fraccionarias
-    // "1/2" -> 0.5
-    // "2" -> 2
-    // total = 2.5
-    const parts = clean.split(/[\s]+/); // Solo por espacios para fracciones mixtas con espacio
+    // Tratamos de extraer todos los números y fracciones
+    const parts = clean.split(/[\s-]+/);
     let total = 0;
     for (const p of parts) {
       if (p.includes('/')) {
-        const subParts = p.split(/[\-]+/); // guión como separador de entera-fracción
-        if (subParts.length > 1) {
-           total += parseFloat(subParts[0]);
-           const [num, den] = subParts[1].split('/').map(Number);
-           if (den) total += num / den;
-        } else {
-           const [num, den] = p.split('/').map(Number);
-           if (den) total += num / den;
-        }
+        const [num, den] = p.split('/').map(Number);
+        if (den) total += num / den;
       } else {
         const val = parseFloat(p);
         if (!isNaN(val)) total += val;
@@ -172,37 +172,27 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const decodeRange = (rawStr: string): { min: number, max: number } | null => {
+    if (!rawStr) return null;
     const str = rawStr.replace(/"/g, '').trim().toLowerCase();
     
-    // Caso "X hasta Y"
-    if (str.includes('hasta')) {
-      const parts = str.split('hasta');
-      return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
+    // Separadores comunes de rango
+    const separators = [' hasta ', ' a ', ' to ', ' - '];
+    for (const sep of separators) {
+      if (str.includes(sep)) {
+        const parts = str.split(sep);
+        return { 
+          min: parseIndustrialSize(parts[0]), 
+          max: parseIndustrialSize(parts[parts.length - 1]) 
+        };
+      }
     }
 
-    // Caso "1/2-2-1/2" o "1/2 - 2-1/2"
-    // Buscamos el guión principal de rango. 
-    // Si hay espacios, preferimos el guión con espacios.
-    if (str.includes(' - ')) {
-       const parts = str.split(' - ');
-       return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1]) };
-    }
-
-    // Si no hay espacios, pero hay múltiples guiones (ej: 1/2-2-1/2)
-    // El guión de rango suele ser el que no forma parte de una fracción mixta
-    if (str.includes('-')) {
-       // Si hay 3 números separados por guiones: A-B-C -> probablemente (A/D)-(B-C/D)
-       // O (A-B)-C... muy ambiguo.
-       // Específicamente para el caso del cliente: 1/2" -2-1/2"
+    // Caso de guión pegado (ej: 1/2-2) pero ignorando fracciones (1-1/2)
+    if (str.includes('-') && !str.includes('/')) {
        const parts = str.split('-');
-       if (parts.length === 3) {
-          // Caso [1/2, 2, 1/2] -> Min 1/2, Max 2+1/2
-          return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[1] + '-' + parts[2]) };
+       if (parts.length >= 2) {
+          return { min: parseIndustrialSize(parts[0]), max: parseIndustrialSize(parts[parts.length-1]) };
        }
-       
-       const min = parseIndustrialSize(parts[0]);
-       const max = parseIndustrialSize(parts[parts.length-1]);
-       return { min, max };
     }
 
     return null;
@@ -211,16 +201,25 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   const getEnrichedItemValue = (item: any, field: 'precio_unitario_cop' | 'duracion') => {
     if (item[field] !== null && item[field] !== undefined && item[field] !== 0) return item[field];
     
-    const itemSizeNum = parseIndustrialSize(item.especificaciones?.nominalSize);
-    const itemRatingNum = parseFloat(item.especificaciones?.rating?.replace(/[^0-9.]/g, '') || '0');
+    const itemSizeNum = parseIndustrialSize(getSpec(item, 'nominalSize'));
+    const itemRatingNum = parseFloat(getSpec(item, 'rating').toString().replace(/[^0-9.]/g, '') || '0');
+
+    const getNormalizedType = (t: string) => {
+      const s = (t || '').toLowerCase();
+      if (s.includes('manual')) return 'manual';
+      if (s.includes('safety') || s.includes('seguridad') || s.includes('psv') || s.includes('alivio')) return 'safety';
+      if (s.includes('control')) return 'control';
+      if (s.includes('on') || s.includes('off') || s.includes('bola') || s.includes('mariposa')) return 'on-off';
+      if (s.includes('presión') || s.includes('vacío') || s.includes('vacuum')) return 'pressure-vacuum';
+      return s;
+    };
+
+    const itemTypeNorm = getNormalizedType(item.tipo_valvula);
 
     // 1. Filtrar por Tipo, Tamaño y Rating primero
     const potentialMatches = catalogItems.filter(c => {
-      // TIPO
-      const typeMap: Record<string, string> = { 'manual': 'manual', 'safety': 'seguridad', 'on-off': 'on', 'control': 'control' };
-      const catType = (c.tipo_valvula || '').toLowerCase();
-      const itemType = typeMap[item.tipo_valvula] || item.tipo_valvula;
-      if (!catType.includes(itemType)) return false;
+      const catTypeNorm = getNormalizedType(c.tipo_valvula);
+      if (catTypeNorm !== itemTypeNorm) return false;
 
       // MEDIDA (Manejo de rangos como "3 hasta 6", "1/2 - 2", "1/2" - 2-1/2")
       let sameSize = false;
@@ -237,21 +236,37 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
       const rawRating = (c.rating || '').toString().toLowerCase();
       if (rawRating.includes('-') || rawRating.includes(',')) {
          const parts = rawRating.split(/[\s\-,/]+/);
-         const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, '')));
-         const min = Math.min(...ratings);
-         const max = Math.max(...ratings);
-         // Si es un rango explícito o una lista (ej: "150, 300, 600")
-         sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+         const ratings = parts
+           .map((p: string) => parseFloat(p.replace(/[^0-9.]/g, '')))
+           .filter((r: number) => !isNaN(r));
+           
+         if (ratings.length > 0) {
+           const min = Math.min(...ratings);
+           const max = Math.max(...ratings);
+           sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+         }
       } else {
-         sameRating = parseFloat(rawRating.replace(/[^0-9.]/g, '')) === itemRatingNum;
+         const catRatingNum = parseFloat(rawRating.replace(/[^0-9.]/g, ''));
+         sameRating = !isNaN(catRatingNum) && catRatingNum === itemRatingNum;
       }
       
       return sameRating;
     });
 
     if (potentialMatches.length === 0) {
+      // Intento de fallback: buscar solo por tipo si no hay match por tamaño/rating
+      const fallbackMatches = catalogItems.filter(c => getNormalizedType(c.tipo_valvula) === itemTypeNorm);
+
+      if (fallbackMatches.length > 0) {
+        // Usar el primer match del tipo como fallback
+        const finalMatch = fallbackMatches[0];
+        const baseVal = finalMatch[field === 'precio_unitario_cop' ? 'costo_base' : 'duracion'];
+        if (field === 'duracion') return (baseVal || getBaseDuration(item.tipo_valvula));
+        return baseVal || getBasePrice(item.tipo_valvula);
+      }
+
       if (field === 'precio_unitario_cop') return getBasePrice(item.tipo_valvula);
-      return 0;
+      return getBaseDuration(item.tipo_valvula);
     }
 
     // 2. Priorizar por SERVICIO
@@ -266,14 +281,12 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
     const finalMatch = serviceMatch || potentialMatches[0];
     
     if (finalMatch) {
-       const baseVal = finalMatch[field === 'precio_unitario_cop' ? 'costo_base' : 'duracion'];
-       // Si es duración, multiplicar por cantidad
-       if (field === 'duracion') return (baseVal || 0); // La suma total se hace con cantidad en otros lados
-       return baseVal;
+        const baseVal = finalMatch[field === 'precio_unitario_cop' ? 'costo_base' : 'duracion'];
+        if (field === 'duracion') return (baseVal || getBaseDuration(item.tipo_valvula));
+        return baseVal || getBasePrice(item.tipo_valvula);
     }
     
-    if (field === 'precio_unitario_cop') return getBasePrice(item.tipo_valvula);
-    return 0;
+    return field === 'precio_unitario_cop' ? getBasePrice(item.tipo_valvula) : getBaseDuration(item.tipo_valvula);
   };
 
   const calculateSubtotal = () => {
@@ -281,8 +294,11 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const calculateTotalDurationDays = () => {
-    const totalHours = items.reduce((acc, item) => acc + (getEnrichedItemValue(item, 'duracion') * item.cantidad), 0);
-    return Math.ceil(totalHours / 8); 
+    return items.reduce((acc, item) => {
+      const itemHours = getEnrichedItemValue(item, 'duracion');
+      const itemDays = item.cantidad * Math.ceil(itemHours / 8);
+      return acc + itemDays;
+    }, 0);
   };
 
   const subtotal = calculateSubtotal();
@@ -353,9 +369,15 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                    <h3 className="display-font" style={{ fontSize: '1rem', color: 'var(--color-midnight)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <FileText size={18} /> Tabla de Partidas
                    </h3>
-                   <button style={{ color: 'var(--color-midnight)', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Plus size={14} /> Agregar Ítem
-                   </button>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#F0F9FF', padding: '0.4rem 0.8rem', borderRadius: '100px', border: '1px solid #BAE6FD' }}>
+                         <Clock size={12} color="#0369A1" />
+                         <span style={{ fontSize: '0.625rem', color: '#0369A1', fontWeight: 800 }}>Turno: 8H (Redondeo ↑)</span>
+                      </div>
+                      <button style={{ color: 'var(--color-midnight)', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                         <Plus size={14} /> Agregar Ítem
+                      </button>
+                   </div>
                 </div>
                 
                 <div style={{ overflowX: 'auto' }}>
@@ -364,9 +386,10 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-surface-low)', backgroundColor: '#F8FAFC' }}>
                           <th style={{ padding: '1rem 2.5rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>ÍTEM</th>
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>CANT.</th>
+                          <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>TAMAÑO</th>
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DESCRIPCIÓN TÉCNICA</th>
                           <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>COSTO BASE (UND)</th>
-                          <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DURACIÓN (HORAS)</th>
+                          <th style={{ padding: '1rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DURACIÓN (DÍAS)</th>
                           <th style={{ padding: '1rem 2.5rem', fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>SUBTOTAL</th>
                         </tr>
                     </thead>
@@ -375,16 +398,19 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                           <tr key={item.id} style={{ borderBottom: '1px solid var(--color-surface-low)' }}>
                             <td style={{ padding: '1.5rem 2.5rem', fontSize: '0.75rem', fontWeight: 700, opacity: 0.5 }}>{(idx + 1).toString().padStart(2, '0')}</td>
                             <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 800 }}>{item.cantidad}</td>
+                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-midnight)' }}>{getSpec(item, 'nominalSize') || '—'}</td>
                             <td style={{ padding: '1.5rem 1rem' }}>
                                 <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.25rem' }}>
-                                  Válvula de {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} {item.especificaciones?.nominalSize} {item.especificaciones?.rating}
+                                  Válvula de {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} {getSpec(item, 'nominalSize')} {getSpec(item, 'rating')}
                                 </h4>
                                 <p style={{ fontSize: '0.625rem', color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', lineHeight: '1.5' }}>
-                                  {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Marca: {item.especificaciones?.brand || 'Indeterminada'} | SN: {item.especificaciones?.serialNumber || 'N/A'}
+                                  {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Marca: {getSpec(item, 'brand') || 'Indeterminada'} | SN: {getSpec(item, 'serialNumber') || 'N/A'}
                                 </p>
                             </td>
                             <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(getEnrichedItemValue(item, 'precio_unitario_cop'))}</td>
-                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-maroon)' }}>{getEnrichedItemValue(item, 'duracion') * item.cantidad} H</td>
+                            <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-maroon)' }}>
+                               {item.cantidad * Math.ceil(getEnrichedItemValue(item, 'duracion') / 8)} DÍAS
+                            </td>
                             <td style={{ padding: '1.5rem 2.5rem', fontSize: '0.875rem', fontWeight: 800 }}>{formatCurrency(getEnrichedItemValue(item, 'precio_unitario_cop') * item.cantidad)}</td>
                           </tr>
                         ))}
@@ -558,25 +584,33 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
            zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
          }}>
            <div style={{ 
-             backgroundColor: 'white', width: '100%', maxWidth: '850px', borderRadius: 'var(--radius-sm)',
-             overflow: 'hidden', display: 'grid', gridTemplateColumns: successUpdate ? '1fr' : '1fr 300px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+             backgroundColor: 'white', width: '98%', maxWidth: '1200px', borderRadius: 'var(--radius-sm)',
+             overflow: 'hidden', display: 'grid', gridTemplateColumns: successUpdate ? '1fr' : '1fr 350px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
            }}>
              
              {/* Left: PDF Visual Representation */}
              {!successUpdate ? (
                 <>
-                  <div style={{ padding: '3rem', borderRight: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-                    <div style={{ backgroundColor: 'white', padding: '4rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', minHeight: '600px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid black', paddingBottom: '1rem' }}>
-                             <div>
-                                <h1 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Bustillo Ingeniería S.A.S.</h1>
-                                <p style={{ fontSize: '0.75rem' }}>NIT: 900.XXX.XXX-X</p>
-                             </div>
-                             <div style={{ textAlign: 'right' }}>
-                                <p style={{ fontSize: '0.75rem', fontWeight: 900 }}>COTIZACIÓN</p>
-                                <p style={{ fontSize: '1rem', color: '#EF4444', fontWeight: 800 }}>{request.folio}</p>
-                             </div>
-                         </div>
+                  <div style={{ padding: '1rem', borderRight: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', overflowY: 'auto', maxHeight: '85vh' }}>
+                    <div style={{ backgroundColor: 'white', padding: '1.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', minHeight: '600px', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid black', paddingBottom: '1rem', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                 {globalConfig?.logo_url ? (
+                                   <img src={globalConfig.logo_url} alt="Logo" style={{ maxHeight: '60px', maxWidth: '120px', objectFit: 'contain' }} />
+                                 ) : (
+                                   <div style={{ width: '40px', height: '40px', backgroundColor: 'var(--color-midnight)', borderRadius: '4px' }} />
+                                 )}
+                                 <div>
+                                    <h1 style={{ fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase' }}>{globalConfig?.razon_social || 'Bustillo Ingeniería S.A.S.'}</h1>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>NIT: {globalConfig?.nit || '900.XXX.XXX-X'}</p>
+                                    <p style={{ fontSize: '0.625rem', opacity: 0.5 }}>{globalConfig?.direccion || 'Calle XX # XX - XX'}</p>
+                                 </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                 <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-on-surface-variant)' }}>COTIZACIÓN OFICIAL</p>
+                                 <p style={{ fontSize: '1.25rem', color: '#EF4444', fontWeight: 900, marginTop: '0.25rem' }}>{request.folio}</p>
+                              </div>
+                          </div>
 
                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', fontSize: '0.75rem' }}>
                             <div>
@@ -595,20 +629,28 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                <thead style={{ backgroundColor: '#000', color: 'white' }}>
                                   <tr>
                                      <th style={{ padding: '0.5rem' }}>CANT</th>
+                                     <th style={{ padding: '0.5rem' }}>TAMAÑO</th>
                                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>DESCRIPCIÓN</th>
+                                     <th style={{ padding: '0.5rem' }}>DURACIÓN</th>
                                      <th style={{ padding: '0.5rem' }}>VALOR UNIT.</th>
                                      <th style={{ padding: '0.5rem' }}>TOTAL</th>
                                   </tr>
                                </thead>
                                <tbody>
-                                  {items.map(item => (
-                                    <tr key={item.id} style={{ borderBottom: '1px solid #EEE' }}>
-                                       <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
-                                       <td style={{ padding: '0.5rem' }}>Reparación Técnica Válvula {VALVE_TYPE_LABELS[item.tipo_valvula]}</td>
-                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(item.precio_unitario_cop || getBasePrice(item.tipo_valvula))}</td>
-                                       <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency((item.precio_unitario_cop || getBasePrice(item.tipo_valvula)) * item.cantidad)}</td>
-                                    </tr>
-                                  ))}
+                                  {items.map(item => {
+                                    const unitPrice = getEnrichedItemValue(item, 'precio_unitario_cop');
+                                    const durationDays = Math.ceil(getEnrichedItemValue(item, 'duracion') / 8);
+                                    return (
+                                      <tr key={item.id} style={{ borderBottom: '1px solid #EEE' }}>
+                                         <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
+                                         <td style={{ padding: '0.5rem', textAlign: 'center' }}>{getSpec(item, 'nominalSize') || '—'}</td>
+                                         <td style={{ padding: '0.5rem' }}>{VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} ({item.servicio})</td>
+                                         <td style={{ padding: '0.5rem', textAlign: 'center' }}>{durationDays} D</td>
+                                         <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice)}</td>
+                                         <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice * item.cantidad)}</td>
+                                      </tr>
+                                    );
+                                  })}
                                </tbody>
                             </table>
                          </div>
@@ -617,7 +659,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                              <p style={{ fontSize: '0.75rem' }}>Subtotal: {formatCurrency(subtotal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>Descuento ({discount}%): -{formatCurrency(discountVal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>IVA ({ivaRate}%): {formatCurrency(iva)}</p>
-                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>DURACIÓN: {totalDays} DÍAS (8h/turno)</p>
+                             <p style={{ fontSize: '0.625rem', opacity: 0.6 }}>Nota: Cálculo de días basado en turnos de 8H laborales.</p>
+                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>DURACIÓN TOTAL ESTIMADA: {totalDays} DÍAS</p>
                              <p style={{ fontSize: '1rem', fontWeight: 900, marginTop: '0.5rem', borderTop: '2px solid black', paddingTop: '0.5rem' }}>TOTAL: {formatCurrency(total)}</p>
                          </div>
                     </div>

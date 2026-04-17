@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 interface PriceItem {
   id: string;
   tipo_valvula: string;
+  descripcion: string;
   tamano: string;
   rating: string;
   servicio: string;
@@ -47,6 +48,7 @@ export default function CatalogoPricingPage() {
   const [editForm, setEditForm] = useState<Partial<PriceItem>>({});
   const [addForm, setAddForm] = useState<Partial<PriceItem>>({
     tipo_valvula: 'manual',
+    descripcion: '',
     tamano: '',
     rating: '',
     servicio: '',
@@ -91,6 +93,7 @@ export default function CatalogoPricingPage() {
         .from('tarifario')
         .insert([{
           tipo_valvula: addForm.tipo_valvula,
+          descripcion: addForm.descripcion,
           tamano: addForm.tamano,
           rating: addForm.rating,
           servicio: addForm.servicio,
@@ -126,6 +129,7 @@ export default function CatalogoPricingPage() {
         .from('tarifario')
         .update({
           tipo_valvula: editForm.tipo_valvula,
+          descripcion: editForm.descripcion,
           tamano: editForm.tamano,
           rating: editForm.rating,
           servicio: editForm.servicio,
@@ -164,9 +168,10 @@ export default function CatalogoPricingPage() {
   };
 
   const filteredItems = items.filter(it => 
-    it.servicio.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (it.servicio || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (it.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
     (it.tamano || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    VALVE_TYPES[it.tipo_valvula].toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (VALVE_TYPES[it.tipo_valvula] || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (it.ubicacion || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -240,11 +245,11 @@ export default function CatalogoPricingPage() {
     if (!window.confirm('¿Deseas descargar la plantilla base para el tarifario?')) return;
     
     // Headers in Spanish for the user
-    const headers = 'Tipo_Valvula;Tamaño;Rating;Servicio;Ubicacion;Costo_Base;Duracion\n';
+    const headers = 'Tipo_Valvula;Descripcion;Tamaño;Rating;Servicio;Ubicacion;Costo_Base;Duracion\n';
     const examples = [
-      'manual;2";150#;Mantenimiento preventivo;Taller;150000;2',
-      'control;4";300#;Calibración técnica;Campo;450000;4',
-      'safety;1";600#;Prueba de disparo;Taller;280000;1'
+      'manual;Válvula de Globo;2";150#;Mantenimiento preventivo;Taller;150000;2',
+      'control;Válvula de Control tipo Mariposa;4";300#;Calibración técnica;Campo;450000;4',
+      'safety;Válvula de Seguridad de Resorte;1";600#;Prueba de disparo;Taller;280000;1'
     ].join('\n');
     
     // Add UTF-8 BOM for Excel compatibility with accents
@@ -275,37 +280,117 @@ export default function CatalogoPricingPage() {
 
     reader.onload = async (e) => {
       const text = e.target?.result as string;
-      const lines = text.split(/\r?\n/);
       const dataToInsert = [];
-
-      // Skip header
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        // Support both semicolon (Spanish Excel) and comma (Standard)
-        const delimiter = line.includes(';') ? ';' : ',';
-        const columns = line.split(delimiter);
+      
+      // Function to parse the entire CSV respecting multi-line quoted fields
+      const parseFullCSV = (csvText: string, delimiter: string) => {
+        const rows = [];
+        let currentRow: string[] = [];
+        let currentField = '';
+        let inQuotes = false;
         
-        if (columns.length >= 6) {
-          const [tipo, tamano, rating, servicio, ubicacion, costo, duracion] = columns;
+        // Remove BOM if present
+        const cleanText = csvText.startsWith('\uFEFF') ? csvText.substring(1) : csvText;
+        
+        for (let i = 0; i < cleanText.length; i++) {
+          const char = cleanText[i];
+          const nextChar = cleanText[i+1];
+          
+          if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+              currentField += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === delimiter && !inQuotes) {
+            currentRow.push(currentField);
+            currentField = '';
+          } else if ((char === '\r' || char === '\n') && !inQuotes) {
+            if (currentField !== '' || currentRow.length > 0) {
+              currentRow.push(currentField);
+              rows.push(currentRow);
+              currentRow = [];
+              currentField = '';
+            }
+            if (char === '\r' && nextChar === '\n') i++; 
+          } else {
+            currentField += char;
+          }
+        }
+        if (currentField !== '' || currentRow.length > 0) {
+          currentRow.push(currentField);
+          rows.push(currentRow);
+        }
+        return rows.map(row => row.map(col => col.trim()));
+      };
+
+      // Detect delimiter from first non-quoted line (skipping BOM)
+      const firstLineText = text.startsWith('\uFEFF') ? text.substring(1) : text;
+      const firstLineEnd = firstLineText.indexOf('\n');
+      const firstLine = firstLineEnd !== -1 ? firstLineText.substring(0, firstLineEnd) : firstLineText;
+      const delimiter = firstLine.includes(';') ? ';' : ',';
+
+      const allRows = parseFullCSV(text, delimiter);
+
+      // Create a set of existing items to prevent duplicates
+      const existingKeys = new Set(items.map(it => 
+        `${(it.tipo_valvula||'').toLowerCase().trim()}|${(it.tamano||'').toLowerCase().trim()}|${(it.rating||'').toLowerCase().trim()}|${(it.servicio||'').toLowerCase().trim()}`
+      ));
+
+      let duplicateCount = 0;
+
+      // Skip header (i=0)
+      for (let i = 1; i < allRows.length; i++) {
+        const columns = allRows[i];
+        
+        if (columns.length >= 7) {
+          const [tipo, descripcion, tamano, rating, servicio, ubicacion, costo, duracion] = columns;
           
           if (tipo && servicio && (costo || ubicacion)) {
+            const rowTipo = tipo.toLowerCase().trim();
+            // Skip header if it was accidentally parsed as data
+            if (rowTipo.includes('tipo_valvula')) continue;
+
+            const rowTamano = (tamano || '').toLowerCase().trim();
+            const rowRating = (rating || '').toLowerCase().trim();
+            const rowServicio = (servicio || '').toLowerCase().trim();
+            const key = `${rowTipo}|${rowTamano}|${rowRating}|${rowServicio}`;
+
+            if (existingKeys.has(key)) {
+              duplicateCount++;
+              continue;
+            }
+
+            // Robust number cleaning
+            const cleanNum = (val: string) => {
+               if (!val) return 0;
+               let c = val.replace(/[^0-9,.-]/g, '');
+               if (c.includes('.') && c.includes(',')) c = c.replace(/\./g, '').replace(',', '.');
+               else if (c.includes(',')) c = c.replace(',', '.');
+               return parseFloat(c) || 0;
+            };
+
             dataToInsert.push({
-              tipo_valvula: tipo.trim().toLowerCase(), // Normalize to internal keys
-              tamano: tamano?.trim() || '',
-              rating: rating?.trim() || '',
-              servicio: servicio.trim(),
-              ubicacion: ubicacion?.trim() || '',
-              costo_base: parseFloat((costo || ubicacion || '').trim().replace(',', '.')) || 0,
-              duracion: parseInt((duracion || '0').trim()) || 0
+              tipo_valvula: rowTipo,
+              descripcion: descripcion || '',
+              tamano: tamano || '',
+              rating: rating || '',
+              servicio: servicio,
+              ubicacion: ubicacion || '',
+              costo_base: cleanNum(costo),
+              duracion: Math.min(2000, Math.round(cleanNum(duracion))) // Sanitize duration to small int
             });
+            
+            existingKeys.add(key);
           }
         }
       }
 
       if (dataToInsert.length === 0) {
-        alert('No se encontraron datos válidos en el archivo.');
+        alert(duplicateCount > 0 
+          ? `No se agregaron nuevos registros (${duplicateCount} duplicados detectados).` 
+          : 'No se encontraron datos válidos en el archivo.');
         setImporting(false);
         return;
       }
@@ -317,12 +402,22 @@ export default function CatalogoPricingPage() {
 
         if (error) throw error;
         
-        alert(`¡Carga exitosa! Se agregaron ${dataToInsert.length} registros.`);
+        let msg = `¡Carga exitosa! Se agregaron ${dataToInsert.length} registros.`;
+        if (duplicateCount > 0) {
+          msg += `\n(${duplicateCount} registros duplicados fueron ignorados).`;
+        }
+        alert(msg);
         setIsImportModalOpen(false);
         fetchPricing(); // Refresh list
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error importing CSV:', err);
-        alert('Error al cargar el archivo. Verifica el formato.');
+        const errorMsg = err.message || 'Error desconocido';
+        
+        if (errorMsg.includes('out of range for type integer')) {
+           alert(`ERROR DE BASE DE DATOS: Un valor de costo es demasiado grande para la columna actual.\n\nEJECUTA ESTO EN EL SQL EDITOR DE SUPABASE:\nALTER TABLE tarifario ALTER COLUMN costo_base TYPE NUMERIC;`);
+        } else {
+           alert(`Error al cargar el archivo: ${errorMsg}\n\nVerifica que el archivo esté guardado como .CSV (separado por comas o punto y coma).`);
+        }
       } finally {
         setImporting(false);
         event.target.value = '';
@@ -333,27 +428,27 @@ export default function CatalogoPricingPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', width: '100%' }}>
        {/* Header */}
        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
              <h1 className="display-font" style={{ fontSize: '2.25rem', color: 'var(--color-midnight)', marginBottom: '0.5rem' }}>Catálogo Tarifario</h1>
              <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '0.875rem' }}>Gestión de precios por tipo, tamaño y rating de válvulas.</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
              <button 
                onClick={() => setIsImportModalOpen(true)}
                className="btn" 
-               style={{ backgroundColor: 'white', color: 'var(--color-midnight)', border: '1.5px solid var(--color-midnight)', padding: '1rem 2rem', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
+               style={{ backgroundColor: 'white', color: 'var(--color-midnight)', border: '1.5px solid var(--color-midnight)', padding: '0.75rem 1.25rem', fontSize: '0.75rem', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
              >
-                <FileStack size={18} /> IMPORTAR CSV
+                <FileStack size={16} /> IMPORTAR CSV
              </button>
              <button 
                onClick={() => setIsAdding(true)}
                className="btn" 
-               style={{ backgroundColor: 'var(--color-midnight)', color: 'white', padding: '1rem 2rem', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
+               style={{ backgroundColor: 'var(--color-midnight)', color: 'white', padding: '0.75rem 1.25rem', fontSize: '0.75rem', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
              >
-                <Plus size={18} /> AGREGAR SERVICIO
+                <Plus size={16} /> AGREGAR SERVICIO
              </button>
           </div>
        </div>
@@ -380,14 +475,21 @@ export default function CatalogoPricingPage() {
 
        {/* Toolbar */}
        <div style={{ display: 'flex', gap: '1.5rem', backgroundColor: 'white', padding: '1.5rem 2.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-surface-high)', alignItems: 'center', boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-             <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
-             <input 
-               type="text" placeholder="Filtrar por tamaño, rating, tipo..." 
-               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-               style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none' }}
-             />
-          </div>
+           <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
+              <input 
+                type="text" placeholder="Filtrar por tamaño, rating, tipo..." 
+                value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', border: '1px solid #E2E8F0', borderRadius: '8px', outline: 'none' }}
+              />
+           </div>
+           
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(59, 130, 246, 0.05)', padding: '0.5rem 1rem', borderRadius: '100px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
+               <Info size={14} color="#3B82F6" />
+               <span style={{ fontSize: '0.625rem', color: '#1E40AF', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                 Turno: 8H (Redondeo ↑)
+               </span>
+            </div>
           
           {selectedIds.length > 0 && (
              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: '#F0F9FF', padding: '0.5rem 1.5rem', borderRadius: '8px', border: '1px solid #BAE6FD' }}>
@@ -417,14 +519,16 @@ export default function CatalogoPricingPage() {
                         onChange={toggleSelectAll} 
                       />
                    </th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TIPO VÁLVULA</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>TAMAÑO</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>RATING</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>DESCRIPCIÓN SERVICIO</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>DURACIÓN (HORAS)</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>UBICACIÓN</th>
-                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>COSTO BASE</th>
-                   <th style={{ padding: '1.25rem 2rem', textAlign: 'right', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em' }}>ACCIONES</th>
+                   <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '140px' }}>TIPO VÁLVULA</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', minWidth: '350px' }}>DESCRIPCIÓN DEL EQUIPO</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '120px' }}>TAMAÑO</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '100px' }}>RATING</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '180px' }}>SERVICIO</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '110px' }}>DURACIÓN (H)</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '110px' }}>DURACIÓN (DÍAS)</th>
+                   <th style={{ padding: '1.25rem 1rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '120px' }}>UBICACIÓN</th>
+                   <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '160px' }}>COSTO BASE</th>
+                   <th style={{ padding: '1.25rem 1.5rem', textAlign: 'right', fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', letterSpacing: '0.1em', width: '120px' }}>ACCIONES</th>
                 </tr>
              </thead>
              <tbody>
@@ -441,6 +545,10 @@ export default function CatalogoPricingPage() {
                         </select>
                      </td>
                      <td style={{ padding: '1.5rem 1rem' }}>
+                        <input placeholder='Ej: Válvula de Globo' value={addForm.descripcion} onChange={(e) => setAddForm({ ...addForm, descripcion: e.target.value })}
+                          style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
+                     </td>
+                     <td style={{ padding: '1.5rem 1rem' }}>
                         <input placeholder='Ej: 2"' value={addForm.tamano} onChange={(e) => setAddForm({ ...addForm, tamano: e.target.value })}
                           style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
                      </td>
@@ -455,6 +563,11 @@ export default function CatalogoPricingPage() {
                      <td style={{ padding: '1.5rem 1rem' }}>
                         <input type="number" placeholder='Horas' value={addForm.duracion} onChange={(e) => setAddForm({ ...addForm, duracion: e.target.value })}
                           style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid #3B82F6' }} />
+                     </td>
+                     <td style={{ padding: '1.5rem 1rem' }}>
+                        <div style={{ padding: '0.6rem', backgroundColor: '#F8FAFC', borderRadius: '4px', border: '1px solid #E2E8F0', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center', color: '#64748B' }}>
+                           {Math.ceil(Number(addForm.duracion || 0) / 8)} D
+                        </div>
                      </td>
                      <td style={{ padding: '1.5rem 1rem' }}>
                         <input placeholder='Ej: Taller / In-Situ' value={addForm.ubicacion} onChange={(e) => setAddForm({ ...addForm, ubicacion: e.target.value })}
@@ -478,10 +591,10 @@ export default function CatalogoPricingPage() {
                 )}
 
                 {isLoading ? (
-                  <tr><td colSpan={8} style={{ padding: '8rem', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} style={{ margin: '0 auto' }} /></td></tr>
+                  <tr><td colSpan={11} style={{ padding: '8rem', textAlign: 'center' }}><Loader2 className="animate-spin" size={40} style={{ margin: '0 auto' }} /></td></tr>
                 ) : filteredItems.length === 0 && !isAdding ? (
                    <tr>
-                      <td colSpan={8} style={{ padding: '8rem', textAlign: 'center', opacity: 0.3 }}>
+                      <td colSpan={11} style={{ padding: '8rem', textAlign: 'center', opacity: 0.3 }}>
                          <Database size={48} style={{ margin: '0 auto 1.5rem' }} />
                          <p style={{ fontWeight: 800 }}>Tarifario vacío o sin coincidencias.</p>
                       </td>
@@ -501,6 +614,10 @@ export default function CatalogoPricingPage() {
                              </select>
                           </td>
                           <td style={{ padding: '1.5rem 1rem' }}>
+                             <input value={editForm.descripcion} onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })}
+                               style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
+                          </td>
+                          <td style={{ padding: '1.5rem 1rem' }}>
                              <input value={editForm.tamano} onChange={(e) => setEditForm({ ...editForm, tamano: e.target.value })}
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
                           </td>
@@ -516,6 +633,11 @@ export default function CatalogoPricingPage() {
                              <input type="number" value={editForm.duracion} onChange={(e) => setEditForm({ ...editForm, duracion: e.target.value })}
                                style={{ width: '100%', padding: '0.6rem', border: '1px solid #3B82F6', borderRadius: '4px' }} />
                              <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>Horas</span>
+                          </td>
+                          <td style={{ padding: '1.5rem 1rem' }}>
+                             <div style={{ padding: '0.6rem', backgroundColor: '#F8FAFC', borderRadius: '4px', border: '1px solid #E2E8F0', fontSize: '0.75rem', fontWeight: 700, textAlign: 'center', color: '#64748B' }}>
+                                {Math.ceil(Number(editForm.duracion || 0) / 8)} D
+                             </div>
                           </td>
                           <td style={{ padding: '1.5rem 1rem' }}>
                              <input value={editForm.ubicacion || ''} onChange={(e) => setEditForm({ ...editForm, ubicacion: e.target.value })}
@@ -541,17 +663,23 @@ export default function CatalogoPricingPage() {
                           <td style={{ padding: '1.5rem 2rem' }}>
                              <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleSelectOne(item.id)} />
                           </td>
-                          <td style={{ padding: '1.5rem 2rem' }}>
-                             <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-midnight)' }}>{VALVE_TYPES[item.tipo_valvula]}</span>
+                          <td style={{ padding: '1.5rem 1.5rem' }}>
+                             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)', whiteSpace: 'nowrap' }}>{VALVE_TYPES[item.tipo_valvula] || item.tipo_valvula}</span>
                           </td>
-                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 800 }}>{item.tamano || '—'}</td>
                           <td style={{ padding: '1.5rem 1rem' }}>
-                             <span style={{ fontSize: '0.7rem', fontWeight: 900, backgroundColor: '#F8FAFC', padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #E2E8F0' }}>{item.rating || '—'}</span>
+                             <div style={{ fontSize: '0.7rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.4', maxWidth: '400px', display: '-webkit-box', WebkitLineClamp: '4', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                {item.descripcion || '—'}
+                             </div>
                           </td>
-                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>{item.servicio}</td>
-                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-maroon)' }}>{item.duracion || 0} H</td>
-                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-midnight)' }}>{item.ubicacion || '—'}</td>
-                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 900, color: '#111827' }}>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)' }}>{item.tamano || '—'}</td>
+                          <td style={{ padding: '1.5rem 1rem' }}>
+                             <span style={{ fontSize: '0.65rem', fontWeight: 900, backgroundColor: '#F1F5F9', padding: '0.2rem 0.6rem', borderRadius: '4px', border: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>{item.rating || '—'}</span>
+                          </td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.75rem', color: 'var(--color-on-surface-variant)', fontWeight: 500 }}>{item.servicio}</td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-maroon)' }}>{item.duracion || 0} H</td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.75rem', fontWeight: 800, color: '#059669' }}>{Math.ceil(Number(item.duracion || 0) / 8)} D</td>
+                          <td style={{ padding: '1.5rem 1rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-midnight)' }}>{item.ubicacion || '—'}</td>
+                          <td style={{ padding: '1.5rem 1.5rem', fontSize: '0.875rem', fontWeight: 900, color: '#111827', whiteSpace: 'nowrap' }}>
                              $ {parseFloat(item.costo_base as string).toLocaleString('es-CO')}
                           </td>
                           <td style={{ padding: '1.5rem 2rem', textAlign: 'right' }}>
@@ -684,6 +812,13 @@ export default function CatalogoPricingPage() {
                        <option value="">(Sin cambios)</option>
                        {Object.entries(VALVE_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
+                  </div>
+
+                   <div>
+                    <label style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.5rem', display: 'block' }}>DESCRIPCIÓN</label>
+                    <input 
+                      placeholder='No cambiar' value={bulkEditForm.descripcion || ''} onChange={(e) => setBulkEditForm({ ...bulkEditForm, descripcion: e.target.value })}
+                      style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #E2E8F0', outline: 'none' }} />
                   </div>
 
                   <div style={{ display: 'flex', gap: '1rem' }}>

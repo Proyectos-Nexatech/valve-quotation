@@ -332,7 +332,7 @@ export default function CotizacionesListPage() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', width: '100%' }}>
        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
              <h1 className="display-font" style={{ fontSize: '2.25rem', color: 'var(--color-midnight)', marginBottom: '0.5rem' }}>Cotizaciones Generadas</h1>

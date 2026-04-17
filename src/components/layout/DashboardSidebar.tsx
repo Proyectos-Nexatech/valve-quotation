@@ -46,15 +46,17 @@ export const DashboardSidebar = () => {
   return (
     <aside style={{
       width: '280px',
-      backgroundColor: 'white',
+      backgroundColor: '#FFFFFF',
       borderRight: '1px solid var(--color-surface-high)',
       height: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      padding: '2.5rem 1.5rem',
+      padding: '2.5rem 1.75rem',
       position: 'fixed',
       left: 0,
-      top: 0
+      top: 0,
+      zIndex: 1000,
+      boxShadow: '4px 0 24px rgba(0,0,0,0.02)'
     }}>
       <div style={{ marginBottom: '4rem', paddingLeft: '1rem' }}>
          {logoUrl ? (
@@ -72,7 +74,7 @@ export const DashboardSidebar = () => {
             {MENU_ITEMS.map((item) => {
               if (isAuthLoading) return null; // Esperar a confirmar identidad
               
-              const isAdminRequired = ['analytics', 'settings'].includes(item.id);
+              const isAdminRequired = ['analytics'].includes(item.id);
               if (isAdminRequired && userRole !== 'admin') return null;
 
               const isActive = pathname === item.path;
