@@ -22,10 +22,10 @@ interface PriceItem {
 
 const VALVE_TYPES: Record<string, string> = {
   'manual': 'Válvula Manual',
-  'safety': 'Válvula de Seguridad',
-  'pressure-vacuum': 'Válvula Presión-Vacío',
   'on-off': 'Válvula On/Off',
-  'control': 'Válvula de Control'
+  'control': 'Válvula de Control',
+  'pressure-vacuum': 'Válvula Presión-Vacío',
+  'safety': 'Válvula de Seguridad'
 };
 
 const DEFAULT_IVA = 19;

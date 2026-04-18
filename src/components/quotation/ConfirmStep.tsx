@@ -8,10 +8,10 @@ import { supabase } from '@/lib/supabase';
 
 const VALVE_TYPE_LABELS: Record<string, string> = {
   'manual': 'VÁLVULAS MANUALES',
-  'safety': 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
-  'pressure-vacuum': 'VÁLVULAS PRESIÓN - VACÍO',
   'on-off': 'VÁLVULAS ON/OFF',
-  'control': 'VÁLVULAS DE CONTROL'
+  'control': 'VÁLVULAS DE CONTROL',
+  'pressure-vacuum': 'VÁLVULAS PRESIÓN - VACÍO',
+  'safety': 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO'
 };
 
 export const ConfirmStep = () => {

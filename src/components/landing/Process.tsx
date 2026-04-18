@@ -15,7 +15,7 @@ const STEPS = [
   {
     number: '03',
     title: 'COTIZACIÓN',
-    description: 'Recibe tu cotización y certificados técnicos listos para tu auditoría.'
+    description: 'Recibe tu cotización via correo electrónico.'
   }
 ];
 

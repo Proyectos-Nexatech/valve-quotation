@@ -30,7 +30,7 @@ export const MainCTA = () => {
           ¿TIENE UNA <span style={{ color: 'var(--color-red-bright)' }}>PARADA DE PLANTA</span> PRÓXIMA?
         </h2>
         <p style={{ fontSize: '1.25rem', opacity: 0.7, marginBottom: '4rem', maxWidth: '650px', margin: '0 auto 4rem', lineHeight: '1.8' }}>
-          Optimice sus tiempos de planeación y contratación con nuestra plataforma técnica de alta precisión.
+          Optimice sus tiempos de planeación y contratación con nuestra plataforma.
         </p>
         
         <Link href="/solicitar" className="btn" style={{ 
@@ -75,7 +75,6 @@ export const Footer = () => {
           <li><Link href="#servicios" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>SERVICIOS</Link></li>
           <li><Link href="#portafolio" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>PORTAFOLIO</Link></li>
           <li><Link href="#como-funciona" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>CÓMO FUNCIONA</Link></li>
-          <li><Link href="#beneficios" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>BENEFICIOS</Link></li>
           <li><Link href="/solicitar" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>NUEVA SOLICITUD</Link></li>
           <li><Link href="/login" style={{ fontSize: '0.875rem', color: 'var(--color-red-bright)', fontWeight: 700 }}>ACCESO PERSONAL</Link></li>
         </ul>

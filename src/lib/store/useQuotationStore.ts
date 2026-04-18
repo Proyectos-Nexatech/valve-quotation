@@ -32,6 +32,7 @@ interface QuotationState {
   addItem: (item: RequestItem) => void;
   removeItem: (id: string) => void;
   updateItem: (id: string, item: Partial<RequestItem>) => void;
+  setItems: (items: RequestItem[]) => void;
   reset: () => void;
 }
 
@@ -55,6 +56,7 @@ export const useQuotationStore = create<QuotationState>((set) => ({
   updateItem: (id, item) => set((state) => ({
     items: state.items.map((i) => (i.id === id ? { ...i, ...item } : i))
   })),
+  setItems: (items) => set({ items }),
   reset: () => set({
     step: 1,
     clientData: { name: '', company: '', role: '', email: '', nit: '', phone: '', plant: '', priority: 'Normal' },
