@@ -24,7 +24,7 @@ interface QuotationState {
     nit: string;
     phone: string;
     plant: string;
-    priority: 'Normal' | 'Urgente';
+    priority: 'Normal' | 'Prioritario';
   };
   items: RequestItem[];
   setStep: (step: number) => void;

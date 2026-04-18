@@ -154,8 +154,8 @@ export const ConfirmStep = () => {
                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', marginBottom: '0.25rem' }}>PRIORIDAD</p>
                    <span style={{ 
                      fontSize: '0.625rem', padding: '0.25rem 0.75rem', borderRadius: '20px',
-                     backgroundColor: clientData.priority === 'Urgente' ? '#FEE2E2' : '#EFF6FF',
-                     color: clientData.priority === 'Urgente' ? '#EF4444' : '#3B82F6',
+                     backgroundColor: clientData.priority === 'Prioritario' ? '#FEE2E2' : '#EFF6FF',
+                     color: clientData.priority === 'Prioritario' ? '#EF4444' : '#3B82F6',
                      fontWeight: 700
                    }}>{clientData.priority.toUpperCase()}</span>
                 </div>

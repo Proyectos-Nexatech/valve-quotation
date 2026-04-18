@@ -71,8 +71,8 @@ export const Step1 = () => {
             className="precision-input"
             value={clientData.priority} onChange={(e) => setClientData({ priority: e.target.value as any })}
           >
-            <option value="Normal">Normal (5-10 días)</option>
-            <option value="Urgente">Urgente (48-72 horas)</option>
+            <option value="Normal">Normal</option>
+            <option value="Prioritario">Prioritario</option>
           </select>
         </div>
 
