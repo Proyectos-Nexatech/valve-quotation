@@ -15,7 +15,7 @@ const STEPS = [
   {
     number: '03',
     title: 'COTIZACIÓN',
-    description: 'Recibe tu cotización via correo electrónico.'
+    description: 'Recibe tu cotización con alcance, tiempo y costo.'
   }
 ];
 
