@@ -65,6 +65,22 @@ export const ConfirmStep = () => {
 
       if (itemsError) throw itemsError;
 
+      // 3. Notificar por email a proyectos@nexatech.com.co
+      try {
+        await fetch('/api/notify-solicitud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folio,
+            clientData,
+            items
+          })
+        });
+      } catch (emailError) {
+        console.error('Error al solicitar envío de correo:', emailError);
+        // No bloquearemos el flujo de cara al cliente si falla el email, ya que los datos están guardados en Supabase.
+      }
+
       setSolId(folio);
       setIsSubmitted(true);
     } catch (err) {
