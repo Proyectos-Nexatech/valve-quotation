@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     const itemsHtml = items.map((item: any, idx: number) => `
       <tr>
         <td style="padding: 8px; border: 1px solid #ddd;">${idx + 1}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${item.valveType}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${item.valveType === 'other' ? 'OTRO' : item.valveType}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${item.serviceType}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
         <td style="padding: 8px; border: 1px solid #ddd;">${item.location}</td>
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
           <strong>Rating:</strong> ${item.rating}<br>
           <strong>Marca:</strong> ${item.brand || 'N/A'}<br>
           <strong>S/N:</strong> ${item.serialNumber || 'N/A'}
+          ${item.technicalNotes ? `<br><br><div style="background-color: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.85em;"><strong>Notas/Descripción:</strong><br>${item.technicalNotes.replace(/\n/g, '<br>')}</div>` : ''}
         </td>
       </tr>
     `).join('');
