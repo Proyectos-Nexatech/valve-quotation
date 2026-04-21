@@ -323,24 +323,24 @@ export default function CotizacionesListPage() {
       let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text('TIEMPO DE EJECUCIÓN:', 110, currentY);
-      doc.text(`${totalHours} HORAS`, 170, currentY);
+      doc.text('TIEMPO DE EJECUCIÓN:', 100, currentY);
+      doc.text(`${totalHours} HORAS`, 175, currentY);
 
       currentY += 10;
       doc.setFontSize(9);
-      doc.text('SUBTOTAL:', 110, currentY);
-      doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 170, currentY);
+      doc.text('SUBTOTAL:', 100, currentY);
+      doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 175, currentY);
 
       currentY += 7;
-      doc.text('IVA (19%):', 110, currentY);
-      doc.text(`$ ${Math.round(iva).toLocaleString()}`, 170, currentY);
+      doc.text('IVA (19%):', 100, currentY);
+      doc.text(`$ ${Math.round(iva).toLocaleString()}`, 175, currentY);
 
       currentY += 10;
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text('TOTAL DE LA PROPUESTA (COP):', 110, currentY);
+      doc.text('TOTAL DE LA PROPUESTA (COP):', 100, currentY);
       doc.setFontSize(16);
-      doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 170, currentY); 
+      doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 175, currentY); 
 
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
