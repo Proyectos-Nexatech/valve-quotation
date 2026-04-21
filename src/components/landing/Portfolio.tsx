@@ -3,7 +3,7 @@
 import React from 'react';
 import {
   ISASafetyValve,
-  ISAGeneralValve,
+  ISAManualValve,
   ISAPressureVacuumValve,
   ISAControlValve,
   ISABallValve
@@ -43,7 +43,7 @@ export const Portfolio = () => {
           {/* 1. Válvulas Manuales */}
           <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '2rem' }}>
             <div style={{ color: 'var(--color-maroon)', backgroundColor: 'white', padding: '1rem', borderRadius: '4px', height: 'fit-content', boxShadow: 'var(--shadow-sm)' }}>
-              <ISAGeneralValve size={48} />
+              <ISAManualValve size={48} />
             </div>
             <div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>

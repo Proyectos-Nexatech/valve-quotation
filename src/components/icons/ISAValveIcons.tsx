@@ -25,6 +25,15 @@ const SVGWrapper = ({ children, size = 32, color = 'currentColor', className }: 
   </svg>
 );
 
+// Manual Valve (Bowtie with stem and crossbar)
+export const ISAManualValve = (props: IconProps) => (
+  <SVGWrapper {...props}>
+    <path d="M4 12 L16 18 L4 24 Z M28 12 L16 18 L28 24 Z" stroke={props.color || 'currentColor'} strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 18 V6" stroke={props.color || 'currentColor'} strokeWidth="2" />
+    <path d="M10 6 H22" stroke={props.color || 'currentColor'} strokeWidth="2" />
+  </SVGWrapper>
+);
+
 // General Valve (Bowtie)
 export const ISAGeneralValve = (props: IconProps) => (
   <SVGWrapper {...props}>
