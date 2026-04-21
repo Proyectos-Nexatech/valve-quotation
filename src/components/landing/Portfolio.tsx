@@ -88,7 +88,7 @@ export const Portfolio = () => {
                   <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Normativa Aplicable:</h4>
                   <ul style={{ color: 'var(--color-slate-600)', fontSize: '0.9rem', listStyle: 'none', padding: 0 }}>
                     <li>• API 6D</li>
-                    <li>• IEC 61508/61511 (SIL)</li>
+                    <li>• API 598</li>
                   </ul>
                 </div>
               </div>
