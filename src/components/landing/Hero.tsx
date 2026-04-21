@@ -30,8 +30,8 @@ export const Hero = () => {
           fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em'
         }}>
           SOLUCIONES DE <br />
-          <span style={{ color: 'var(--color-red-bright)' }}>INGENIERÍA PARA</span> <br />
-          VÁLVULAS INDUSTRIALES
+          <span style={{ color: 'var(--color-red-bright)' }}>MANTENIMIENTO PARA</span> <br />
+          VÁLVULAS INDUSTRIALES.
         </h1>
         
         <p style={{ fontSize: '1.125rem', lineHeight: '1.6', color: 'rgba(255,255,255,1)', marginBottom: '3.5rem', maxWidth: '600px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
