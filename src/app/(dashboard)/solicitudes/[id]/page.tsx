@@ -420,8 +420,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 <div style={{ backgroundColor: 'white', padding: '3rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end', borderTop: '2px solid var(--color-surface-low)' }}>
-                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
-                      <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>TIEMPO DE EJECUCIÓN (HH)</span>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '500px' }}>
+                      <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>TIEMPO DE EJECUCIÓN</span>
                       <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-maroon)' }}>{items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS</span>
                    </div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
