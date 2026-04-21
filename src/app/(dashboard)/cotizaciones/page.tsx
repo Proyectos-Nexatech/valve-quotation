@@ -219,7 +219,7 @@ export default function CotizacionesListPage() {
           const rawRating = (c.rating || '').toString().toLowerCase();
           if (rawRating.includes('-') || rawRating.includes(',')) {
              const parts = rawRating.split(/[\s\-,/]+/);
-             const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, ''))).filter(r => !isNaN(r));
+             const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, ''))).filter((r: number) => !isNaN(r));
              if (ratings.length > 0) {
                 const min = Math.min(...ratings);
                 const max = Math.max(...ratings);
