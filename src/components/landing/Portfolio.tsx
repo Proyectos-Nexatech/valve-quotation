@@ -107,7 +107,7 @@ export const Portfolio = () => {
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
                 3. Válvulas de Presión y Vacío
               </h3>
-              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Servicios especializados para tanques de almacenamiento de hidrocarburos o químicos.</p>
+              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Servicios especializados para tanques de almacenamiento de Liquidos.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alcance:</h4>
@@ -133,13 +133,13 @@ export const Portfolio = () => {
             </div>
             <div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
-                4. Válvulas de Control (Proporcionales)
+                4. Válvulas de Control.
               </h3>
               <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Verificacion de cierre de acuerdo a la clase de la valvula.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alcance:</h4>
-                  <p style={{ color: 'var(--color-slate-600)', fontSize: '0.95rem' }}>Revisión de internos (Trim), diagnóstico de posicionadores inteligentes y mantenimiento de actuadores.</p>
+                  <p style={{ color: 'var(--color-slate-600)', fontSize: '0.95rem' }}>Revisión de internos (Trim), diagnóstico de posicionadores inteligentes, mantenimiento de accesorios y mantenimiento de actuadores.</p>
                 </div>
                 <div>
                   <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Normativa Aplicable:</h4>
@@ -150,7 +150,7 @@ export const Portfolio = () => {
                 </div>
               </div>
               <p style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FFF5F5', borderLeft: '3px solid var(--color-red-bright)', fontSize: '0.9rem', color: 'var(--color-maroon)', fontWeight: 600 }}>
-                Pruebas: Calibración de carrera.
+                Pruebas: Ajuste de carrera y Bench Set.
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export const Portfolio = () => {
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
                 5. Válvulas de Seguridad y Alivio (PSV / PRV)
               </h3>
-              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Enfoque en la protección de activos y vida humana bajo normatividad de recipientes a presión.</p>
+              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Servicio de mantenimiento general y ajuste de disparo bajo normativa</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alcance:</h4>
