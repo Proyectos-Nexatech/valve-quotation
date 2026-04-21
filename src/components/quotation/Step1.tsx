@@ -6,8 +6,28 @@ import { useQuotationStore } from '@/lib/store/useQuotationStore';
 export const Step1 = () => {
   const { clientData, setClientData, setStep } = useQuotationStore();
 
+  const [emailError, setEmailError] = React.useState('');
+
+  const isCorporateEmail = (email: string) => {
+    if (!email || !email.includes('@')) return false;
+    const domain = email.split('@')[1].toLowerCase();
+    const blockedDomains = [
+      'gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 
+      'icloud.com', 'live.com', 'msn.com', 'aol.com',
+      'yahoo.es', 'hotmail.es', 'live.com.co'
+    ];
+    return !blockedDomains.some(blocked => domain.includes(blocked));
+  };
+
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isCorporateEmail(clientData.email)) {
+      setEmailError('Para cotizaciones industriales es necesario un correo electrónico corporativo.');
+      return;
+    }
+
+    setEmailError('');
     setStep(2);
   };
 
@@ -44,9 +64,22 @@ export const Step1 = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>CORREO ELECTRÓNICO</label>
           <input 
-            type="email" required className="precision-input" placeholder="ejemplo@correo.com"
-            value={clientData.email} onChange={(e) => setClientData({ email: e.target.value })}
+            type="email" required className="precision-input" placeholder="ejemplo@empresa.com.co"
+            style={{ 
+              borderColor: emailError ? '#EF4444' : undefined,
+              backgroundColor: emailError ? '#FEF2F2' : undefined 
+            }}
+            value={clientData.email} 
+            onChange={(e) => {
+              setClientData({ email: e.target.value });
+              if (emailError) setEmailError('');
+            }}
           />
+          {emailError && (
+            <p style={{ color: '#EF4444', fontSize: '0.625rem', fontWeight: 700, marginTop: '-0.25rem' }}>
+              {emailError}
+            </p>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
