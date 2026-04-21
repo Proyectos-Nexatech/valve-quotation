@@ -176,7 +176,7 @@ export const Step2 = () => {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '10rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '10rem' }}>
       <header style={{ marginBottom: '4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ maxWidth: '600px' }}>
           <h1 className="display-font" style={{ fontSize: '2.5rem', color: 'var(--color-midnight)', marginBottom: '1rem' }}>Especificación de Equipos</h1>
@@ -212,7 +212,51 @@ export const Step2 = () => {
         </div>
       </header>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '3rem', alignItems: 'start' }}>
+        {/* Instructions Card */}
+        <aside style={{ 
+          backgroundColor: 'var(--color-surface-low)', 
+          padding: '2rem', 
+          borderRadius: 'var(--radius-sm)', 
+          border: '1px solid var(--color-surface-high)',
+          position: 'sticky',
+          top: '2rem'
+        }}>
+          <h3 className="display-font" style={{ fontSize: '1.25rem', color: 'var(--color-midnight)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Info size={20} style={{ color: 'var(--color-orange)' }} /> Guía Rápida
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <section>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>1. Configuración de Partidas</h4>
+              <ul style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.5' }}>
+                <li>Seleccione el <strong>Tipo de Válvula</strong> en el panel izquierdo de cada partida.</li>
+                <li>Indique la <strong>Cantidad</strong> y los parámetros de <strong>Tamaño/Rating</strong>.</li>
+                <li>Defina el <strong>Tipo de Servicio</strong> y la <strong>Ubicación</strong> de ejecución.</li>
+              </ul>
+            </section>
+
+            <section style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '4px', border: '1px solid var(--color-surface-high)' }}>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileSpreadsheet size={14} /> Carga Masiva (CSV)
+              </h4>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.4' }}>
+                Ideal para inventarios extensos. Descargue nuestra plantilla, complete los datos y suba el archivo para cargar todos los equipos en segundos.
+              </p>
+            </section>
+
+            <section style={{ backgroundColor: 'var(--color-midnight)', padding: '1rem', borderRadius: '4px', color: 'white' }}>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-orange)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <MessageSquare size={14} /> Requerimiento Libre
+              </h4>
+              <p style={{ fontSize: '0.8125rem', opacity: 0.8, lineHeight: '1.4' }}>
+                ¿No tiene las especificaciones? Use el botón superior para describir su necesidad en texto libre y un especialista lo asesorará.
+              </p>
+            </section>
+          </div>
+        </aside>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
         {items.map((item, index) => (
           <div key={item.id} style={{
             backgroundColor: 'white',
@@ -400,6 +444,7 @@ export const Step2 = () => {
           <Plus size={18} /> [ + AGREGAR OTRA VÁLVULA ]
         </button>
       </div>
+    </div>
 
       {/* Sticky footer for Summary */}
       <div style={{
