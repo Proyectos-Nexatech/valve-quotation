@@ -25,7 +25,8 @@ export async function POST(request: Request) {
           <strong>Tam:</strong> ${item.nominalSize}<br>
           <strong>Rating:</strong> ${item.rating}<br>
           <strong>Marca:</strong> ${item.brand || 'N/A'}<br>
-          <strong>S/N:</strong> ${item.serialNumber || 'N/A'}
+          <strong>S/N:</strong> ${item.serialNumber || 'N/A'}<br>
+          <strong>Montaje/Desmontaje:</strong> ${item.montajeDesmontaje ? '<span style="color: #10B981; font-weight: bold;">SÍ</span>' : 'NO'}
           ${item.technicalNotes ? `<br><br><div style="background-color: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 0.85em;"><strong>Notas/Descripción:</strong><br>${item.technicalNotes.replace(/\n/g, '<br>')}</div>` : ''}
         </td>
       </tr>

@@ -15,7 +15,7 @@ const VALVE_TYPES = [
 
 const SIZES = ['1/2"', '3/4"', '1"', '2"', '4"', '6"', '8"', '10"', '12"', '18"', '24"', 'N/A / Por Definir'];
 const RATINGS = ['150#', '300#', '600#', '900#', '1500#', '2500#', 'N/A / Por Definir'];
-const SERVICES = ['Mantenimiento General', 'Overhaul', 'Certificación', 'Inspección', 'Desconocido / Reemplazo'];
+const SERVICES = ['Mantenimiento General', 'Solo Pruebas', 'Reparacion'];
 
 export const Step2 = () => {
   const { items, addItem, removeItem, updateItem, setItems, setStep } = useQuotationStore();
@@ -37,7 +37,8 @@ export const Step2 = () => {
         tag: '',
         quantity: 1,
         brand: '',
-        serialNumber: ''
+        serialNumber: '',
+        montajeDesmontaje: false
       });
     }
   }, []);
@@ -54,7 +55,8 @@ export const Step2 = () => {
       tag: '',
       quantity: 1,
       brand: '',
-      serialNumber: ''
+      serialNumber: '',
+      montajeDesmontaje: false
     });
   };
 
@@ -70,13 +72,14 @@ export const Step2 = () => {
       'Ubicacion',
       'Marca',
       'Serial',
-      'Tag_Notas'
+      'Tag_Notas',
+      'Montaje_Desmontaje'
     ].join(';');
 
     const examples = [
-      'manual;5;2";150#;Mantenimiento General;Taller;Fisher;F-100;Tag-123',
-      'control;2;4";300#;Overhaul;Campo;Masoneilan;M-200;Tag-456',
-      'safety;10;1";600#;Certificación;Taller;Crosby;C-300;Tag-789'
+      'manual;5;2";150#;Mantenimiento General;Taller;Fisher;F-100;Tag-123;si',
+      'control;2;4";300#;Overhaul;Campo;Masoneilan;M-200;Tag-456;no',
+      'safety;10;1";600#;Certificación;Taller;Crosby;C-300;Tag-789;si'
     ].join('\n');
 
     const csvContent = '\uFEFF' + headers + '\n' + examples;
@@ -130,7 +133,8 @@ export const Step2 = () => {
           brand: columns[6] || '',
           serialNumber: columns[7] || '',
           technicalNotes: columns[8] || '',
-          tag: ''
+          tag: '',
+          montajeDesmontaje: columns[9]?.toLowerCase().startsWith('s') || columns[9]?.toLowerCase().startsWith('y') || columns[9] === 'true'
         });
       }
 
@@ -163,7 +167,8 @@ export const Step2 = () => {
       serialNumber: 'N/A',
       technicalNotes: `SOLICITUD REDACTADA POR USUARIO SIN ESPECIFICAR:\n\n${generalDescription}`,
       tag: '',
-      quantity: 1
+      quantity: 1,
+      montajeDesmontaje: false
     }]);
     
     setIsDescriptionModalOpen(false);
@@ -316,9 +321,38 @@ export const Step2 = () => {
                     value={item.location} onChange={(e) => updateItem(item.id, { location: e.target.value })}
                   >
                     <option value="Taller">Taller</option>
-                    <option value="In-Situ / Campo">In-Situ / Campo</option>
-                    <option value="Workshop (Overseas)">Workshop (Overseas)</option>
+                    <option value="Instalaciones del Cliente">Instalaciones del Cliente</option>
                   </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label style={{ fontSize: '0.625rem', fontWeight: 700, color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)' }}>DESMONTAJE / MONTAJE</label>
+                  <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'var(--color-surface-low)', padding: '0.25rem', borderRadius: 'var(--radius-sm)' }}>
+                    <button
+                      type="button"
+                      onClick={() => updateItem(item.id, { montajeDesmontaje: true })}
+                      style={{
+                        flex: 1, padding: '1rem', border: 'none', borderRadius: '4px',
+                        backgroundColor: item.montajeDesmontaje ? 'var(--color-midnight)' : 'transparent',
+                        color: item.montajeDesmontaje ? 'white' : 'var(--color-on-surface-variant)',
+                        fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      SÍ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateItem(item.id, { montajeDesmontaje: false })}
+                      style={{
+                        flex: 1, padding: '1rem', border: 'none', borderRadius: '4px',
+                        backgroundColor: !item.montajeDesmontaje ? 'var(--color-midnight)' : 'transparent',
+                        color: !item.montajeDesmontaje ? 'white' : 'var(--color-on-surface-variant)',
+                        fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+                      }}
+                    >
+                      NO
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

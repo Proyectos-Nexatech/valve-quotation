@@ -56,7 +56,8 @@ export const ConfirmStep = () => {
           nominalSize: item.nominalSize,
           rating: item.rating,
           brand: item.brand,
-          serialNumber: item.serialNumber
+          serialNumber: item.serialNumber,
+          montajeDesmontaje: item.montajeDesmontaje
         }
       }));
 
@@ -142,7 +143,9 @@ export const ConfirmStep = () => {
                         <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.25rem' }}>
                            {VALVE_TYPE_LABELS[item.valveType]} {item.nominalSize} {item.rating}
                         </h4>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--color-on-surface-variant)' }}>{item.serviceType} ({item.location}) — Cantidad: {item.quantity}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--color-on-surface-variant)' }}>
+                          {item.serviceType} ({item.location}) {item.montajeDesmontaje ? ' + Montaje/Desmontaje' : ''} — Cantidad: {item.quantity}
+                        </p>
                      </div>
                      <span style={{ fontSize: '0.625rem', fontFamily: 'var(--font-mono)', fontWeight: 700, opacity: 0.5 }}>ITEM {(idx + 1).toString().padStart(2, '0')}</span>
                   </div>

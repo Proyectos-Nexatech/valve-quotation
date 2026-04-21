@@ -149,7 +149,8 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
       try { specs = JSON.parse(specs); } catch (e) { return ''; }
     }
     // Permisivo con camelCase y lowercase
-    return specs[field] || specs[field.toLowerCase()] || '';
+    const val = specs[field] !== undefined ? specs[field] : specs[field.toLowerCase()];
+    return val ?? '';
   };
 
   const parseIndustrialSize = (str: string): number => {
@@ -404,7 +405,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                   Válvula de {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} {getSpec(item, 'nominalSize')} {getSpec(item, 'rating')}
                                 </h4>
                                 <p style={{ fontSize: '0.625rem', color: 'var(--color-on-surface-variant)', fontFamily: 'var(--font-mono)', lineHeight: '1.5' }}>
-                                  {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Marca: {getSpec(item, 'brand') || 'Indeterminada'} | SN: {getSpec(item, 'serialNumber') || 'N/A'}
+                                  {item.servicio} | Ubicación: {item.ubicacion || 'N/A'} | Montaje: {getSpec(item, 'montajeDesmontaje') ? 'SÍ' : 'NO'} | Marca: {getSpec(item, 'brand') || 'Indeterminada'} | SN: {getSpec(item, 'serialNumber') || 'N/A'}
                                 </p>
                             </td>
                             <td style={{ padding: '1.5rem 1rem', fontSize: '0.875rem', fontWeight: 600 }}>{formatCurrency(getEnrichedItemValue(item, 'precio_unitario_cop'))}</td>
@@ -644,7 +645,10 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                       <tr key={item.id} style={{ borderBottom: '1px solid #EEE' }}>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{getSpec(item, 'nominalSize') || '—'}</td>
-                                         <td style={{ padding: '0.5rem' }}>{VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} ({item.servicio})</td>
+                                         <td style={{ padding: '0.5rem' }}>
+                                           {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} ({item.servicio})
+                                           {getSpec(item, 'montajeDesmontaje') ? ' + Montaje/Desmontaje' : ''}
+                                         </td>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{durationDays} D</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice)}</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice * item.cantidad)}</td>

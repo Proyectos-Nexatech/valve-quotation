@@ -12,6 +12,7 @@ export interface RequestItem {
   quantity: number;
   brand?: string;
   serialNumber?: string;
+  montajeDesmontaje: boolean;
 }
 
 interface QuotationState {
