@@ -180,7 +180,7 @@ export const Portfolio = () => {
                 </div>
               </div>
               <p style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FFF5F5', borderLeft: '3px solid var(--color-red-bright)', fontSize: '0.9rem', color: 'var(--color-maroon)', fontWeight: 600 }}>
-                Pruebas de Disparo, Sello y Asentamiento.
+                Pruebas de Sello y disparo
               </p>
             </div>
           </div>
