@@ -15,7 +15,7 @@ const VALVE_TYPES = [
 
 const SIZES = ['1/2"', '3/4"', '1"', '2"', '4"', '6"', '8"', '10"', '12"', '18"', '24"', 'N/A / Por Definir'];
 const RATINGS = ['150#', '300#', '600#', '900#', '1500#', '2500#', 'N/A / Por Definir'];
-const SERVICES = ['Mantenimiento General', 'Solo Pruebas', 'Reparacion'];
+const SERVICES = ['Mantenimiento General', 'Certificación', 'Overhaul', 'Solo Pruebas', 'Reparacion', 'Calibración'];
 
 export const Step2 = () => {
   const { items, addItem, removeItem, updateItem, setItems, setStep } = useQuotationStore();
@@ -76,13 +76,7 @@ export const Step2 = () => {
       'Montaje_Desmontaje'
     ].join(';');
 
-    const examples = [
-      'manual;5;2";150#;Mantenimiento General;Taller;Fisher;F-100;Tag-123;si',
-      'control;2;4";300#;Overhaul;Campo;Masoneilan;M-200;Tag-456;no',
-      'safety;10;1";600#;Certificación;Taller;Crosby;C-300;Tag-789;si'
-    ].join('\n');
-
-    const csvContent = '\uFEFF' + headers + '\n' + examples;
+    const csvContent = '\uFEFF' + headers + '\n';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
