@@ -190,17 +190,21 @@ export default function CotizacionesListPage() {
         const itemSizeNum = parseIndustrialSize(specs?.nominalSize);
         const itemRatingNum = parseFloat(specs?.rating?.toString().replace(/[^0-9.]/g, '') || '0');
 
+        const getNormalizedType = (t: string) => {
+          const s = (t || '').toLowerCase();
+          if (s.includes('manual')) return 'manual';
+          if (s.includes('safety') || s.includes('seguridad') || s.includes('psv') || s.includes('alivio')) return 'safety';
+          if (s.includes('control')) return 'control';
+          if (s.includes('on') || s.includes('off') || s.includes('bola') || s.includes('mariposa')) return 'on-off';
+          if (s.includes('presión') || s.includes('vacío') || s.includes('vacuum')) return 'pressure-vacuum';
+          return s;
+        };
+
+        const itemTypeNorm = getNormalizedType(item.tipo_valvula);
+
         const potentialMatches = catalogItems.filter(c => {
-          const typeMap: Record<string, string> = { 
-            'manual': 'manual', 
-            'safety': 'seguridad', 
-            'on-off': 'on', 
-            'control': 'control',
-            'pressure-vacuum': 'presión'
-          };
-          const catType = (c.tipo_valvula || '').toLowerCase();
-          const itemType = typeMap[item.tipo_valvula] || item.tipo_valvula;
-          if (!catType.includes(itemType)) return false;
+          const catTypeNorm = getNormalizedType(c.tipo_valvula);
+          if (catTypeNorm !== itemTypeNorm) return false;
 
           let sameSize = false;
           const range = decodeRange(c.tamano || '');
@@ -215,12 +219,15 @@ export default function CotizacionesListPage() {
           const rawRating = (c.rating || '').toString().toLowerCase();
           if (rawRating.includes('-') || rawRating.includes(',')) {
              const parts = rawRating.split(/[\s\-,/]+/);
-             const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, '')));
-             const min = Math.min(...ratings);
-             const max = Math.max(...ratings);
-             sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+             const ratings = parts.map((p: string) => parseFloat(p.replace(/[^0-9.]/g, ''))).filter(r => !isNaN(r));
+             if (ratings.length > 0) {
+                const min = Math.min(...ratings);
+                const max = Math.max(...ratings);
+                sameRating = (itemRatingNum >= min && itemRatingNum <= max) || ratings.includes(itemRatingNum);
+             }
           } else {
-             sameRating = parseFloat(rawRating.replace(/[^0-9.]/g, '')) === itemRatingNum;
+             const catRatingNum = parseFloat(rawRating.replace(/[^0-9.]/g, ''));
+             sameRating = !isNaN(catRatingNum) && catRatingNum === itemRatingNum;
           }
           return sameRating;
         });
@@ -228,14 +235,22 @@ export default function CotizacionesListPage() {
         const itemServ = (item.servicio || '').toLowerCase();
         const serviceMatch = potentialMatches.find(c => {
            const catServ = (c.servicio || '').toLowerCase();
-           const isMaint = itemServ.includes('mantenimiento') && (catServ.includes('mantenimiento') || catServ.includes('reparación'));
-           const isCert = (itemServ.includes('certifica') || itemServ.includes('prueba')) && (catServ.includes('certifica') || catServ.includes('prueba'));
+           const isMaint = itemServ.includes('mantenimiento') && (catServ.includes('mantenimiento') || catServ.includes('reparación') || catServ.includes('servicio'));
+           const isCert = (itemServ.includes('certifica') || itemServ.includes('prueba')) && (catServ.includes('certifica') || catServ.includes('prueba') || catServ.includes('test'));
            return isMaint || isCert || catServ.includes(itemServ) || itemServ.includes(catServ);
         });
 
         const match = serviceMatch || potentialMatches[0];
-        const finalPrice = item.precio_unitario_cop || (match ? match.costo_base : 850000);
-        const finalDur = item.duracion || (match ? match.duracion : 0);
+        
+        let finalPrice = item.precio_unitario_cop;
+        let finalDur = item.duracion;
+
+        if (!finalPrice || finalPrice === 0) {
+           finalPrice = match ? match.costo_base : (itemTypeNorm === 'control' ? 1912500 : (itemTypeNorm === 'safety' ? 1190000 : 850000));
+        }
+        if (!finalDur || finalDur === 0) {
+           finalDur = match ? match.duracion : (itemTypeNorm === 'control' ? 8 : (itemTypeNorm === 'safety' ? 4 : 8));
+        }
 
         return { ...item, especificaciones: specs, precio_unitario_cop: finalPrice, duracion: finalDur };
       });
