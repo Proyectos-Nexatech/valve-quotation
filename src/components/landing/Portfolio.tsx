@@ -47,7 +47,7 @@ export const Portfolio = () => {
             </div>
             <div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
-                1. Válvulas Manuales (Bola, Compuerta, Cheque, Globo, Mariposa, Plug y Tapon).
+                1. Válvulas Manuales (Compuerta, Globo, Bola, Mariposa, Tapón y Antirretorno (cheque)).
               </h3>
               <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Mantenimiento preventivo y correctivo de válvulas de aislamiento general.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
