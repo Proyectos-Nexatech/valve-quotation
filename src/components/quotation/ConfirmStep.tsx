@@ -11,7 +11,8 @@ const VALVE_TYPE_LABELS: Record<string, string> = {
   'on-off': 'VÁLVULAS ON/OFF',
   'control': 'VÁLVULAS DE CONTROL',
   'pressure-vacuum': 'VÁLVULAS PRESIÓN - VACÍO',
-  'safety': 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO'
+  'safety': 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
+  'other': 'OTRO / POR DEFINIR'
 };
 
 export const ConfirmStep = () => {

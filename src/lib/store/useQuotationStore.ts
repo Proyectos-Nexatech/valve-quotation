@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export interface RequestItem {
   id: string;
-  valveType: 'manual' | 'safety' | 'pressure-vacuum' | 'on-off' | 'control';
+  valveType: 'manual' | 'safety' | 'pressure-vacuum' | 'on-off' | 'control' | 'other';
   nominalSize: string;
   rating: string;
   serviceType: string;

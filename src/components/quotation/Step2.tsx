@@ -2,23 +2,26 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useQuotationStore, RequestItem } from '@/lib/store/useQuotationStore';
-import { Plus, Trash2, ChevronRight, Hash, Download, Upload, FileSpreadsheet, Info, X, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Hash, Download, Upload, FileSpreadsheet, Info, X, AlertCircle, MessageSquare } from 'lucide-react';
 
 const VALVE_TYPES = [
   { id: 'manual', label: 'VÁLVULAS MANUALES' },
   { id: 'on-off', label: 'VÁLVULAS ON/OFF' },
   { id: 'control', label: 'VÁLVULAS DE CONTROL' },
   { id: 'pressure-vacuum', label: 'VÁLVULAS PRESIÓN - VACÍO' },
-  { id: 'safety', label: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO' }
+  { id: 'safety', label: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO' },
+  { id: 'other', label: 'OTRO / POR DEFINIR' }
 ];
 
-const SIZES = ['1/2"', '3/4"', '1"', '2"', '4"', '6"', '8"', '10"', '12"', '18"', '24"'];
-const RATINGS = ['150#', '300#', '600#', '900#', '1500#', '2500#'];
-const SERVICES = ['Mantenimiento General', 'Overhaul', 'Certificación', 'Inspección'];
+const SIZES = ['1/2"', '3/4"', '1"', '2"', '4"', '6"', '8"', '10"', '12"', '18"', '24"', 'N/A / Por Definir'];
+const RATINGS = ['150#', '300#', '600#', '900#', '1500#', '2500#', 'N/A / Por Definir'];
+const SERVICES = ['Mantenimiento General', 'Overhaul', 'Certificación', 'Inspección', 'Desconocido / Reemplazo'];
 
 export const Step2 = () => {
   const { items, addItem, removeItem, updateItem, setItems, setStep } = useQuotationStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [generalDescription, setGeneralDescription] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -142,6 +145,30 @@ export const Step2 = () => {
     reader.readAsText(file);
     event.target.value = '';
   };
+  
+  const handleSaveDescription = () => {
+    if (!generalDescription.trim()) {
+      alert('Por favor ingrese una descripción.');
+      return;
+    }
+    
+    setItems([{
+      id: Math.random().toString(36).substr(2, 9),
+      valveType: 'other' as any,
+      nominalSize: 'N/A / Por Definir',
+      rating: 'N/A / Por Definir',
+      serviceType: 'Desconocido / Reemplazo',
+      location: 'Taller',
+      brand: 'N/A',
+      serialNumber: 'N/A',
+      technicalNotes: `SOLICITUD REDACTADA POR USUARIO SIN ESPECIFICAR:\n\n${generalDescription}`,
+      tag: '',
+      quantity: 1
+    }]);
+    
+    setIsDescriptionModalOpen(false);
+    alert('Hemos registrado su requerimiento escrito. Puede confirmar la solicitud en el siguiente paso.');
+  };
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '10rem' }}>
@@ -151,14 +178,26 @@ export const Step2 = () => {
           <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '0.875rem' }}>Defina los parámetros técnicos de las válvulas requeridas para la cotización técnica. Cada partida representa un grupo de equipos con características idénticas.</p>
         </div>
         
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <button 
+            onClick={() => setIsDescriptionModalOpen(true)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.25rem',
+              backgroundColor: 'var(--color-midnight)', color: 'white',
+              borderRadius: '4px', border: 'none',
+              fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', width: '100%', justifyContent: 'center'
+            }}
+          >
+            <MessageSquare size={16} /> NO SÉ LAS ESPECIFICACIONES
+          </button>
+          
           <button 
             onClick={() => setIsModalOpen(true)}
             style={{ 
               display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.25rem',
               backgroundColor: 'var(--color-surface-low)', color: 'var(--color-midnight)',
               borderRadius: '4px', border: '1px solid var(--color-surface-high)',
-              fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
+              fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', width: '100%', justifyContent: 'center'
             }}
             onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-high)'}
             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--color-surface-low)'}
@@ -458,6 +497,75 @@ export const Step2 = () => {
                  style={{ padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.75rem', color: 'var(--color-on-surface-variant)' }}
                >
                  Cerrar Ventana
+               </button>
+            </footer>
+          </div>
+        </div>
+      )}
+
+      {/* Description Modal */}
+      {isDescriptionModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            backgroundColor: 'white', width: '100%', maxWidth: '600px',
+            borderRadius: 'var(--radius-sm)', overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
+          }}>
+            <header style={{ 
+              padding: '2rem', borderBottom: '1px solid var(--color-surface-high)',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              backgroundColor: 'var(--color-surface-low)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ color: 'var(--color-midnight)' }}><MessageSquare size={24} /></div>
+                <h2 className="display-font" style={{ fontSize: '1.25rem', fontWeight: 800 }}>DESCRIPCIÓN DE SOLICITUD</h2>
+              </div>
+              <button 
+                onClick={() => setIsDescriptionModalOpen(false)}
+                style={{ color: 'var(--color-on-surface-variant)' }}
+              >
+                <X size={24} />
+              </button>
+            </header>
+
+            <div style={{ padding: '2.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)', lineHeight: '1.6' }}>
+                  Si no cuenta con las especificaciones técnicas exactas de los equipos, puede describir detalladamente su requerimiento con sus propias palabras a continuación. Nuestro equipo de ingenieros lo analizará.
+                </p>
+
+                <textarea
+                  className="precision-input"
+                  placeholder="Ej: Necesito cotizar el mantenimiento general para 5 válvulas ubicadas en la planta de Mamonal. Son válvulas de bola tamaño 2 pulgadas pero desconozco la marca y rating específico..."
+                  style={{ minHeight: '200px', resize: 'vertical', width: '100%', padding: '1rem', fontSize: '0.875rem' }}
+                  value={generalDescription}
+                  onChange={(e) => setGeneralDescription(e.target.value)}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', backgroundColor: '#FFFBEB', borderRadius: '4px', border: '1px solid #FEF3C7' }}>
+                   <AlertCircle size={18} color="#D97706" />
+                   <p style={{ fontSize: '0.75rem', color: '#92400E', fontWeight: 600 }}>Nota: Al guardar esta descripción, se reemplazarán temporalmente las casillas técnicas que haya llenado, creando una partida de texto libre.</p>
+                </div>
+              </div>
+            </div>
+
+            <footer style={{ padding: '1.5rem 2rem', backgroundColor: 'var(--color-surface-low)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+               <button 
+                 onClick={() => setIsDescriptionModalOpen(false)}
+                 style={{ padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.75rem', color: 'var(--color-on-surface-variant)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
+               >
+                 Cancelar
+               </button>
+               <button 
+                 onClick={handleSaveDescription}
+                 style={{ padding: '0.75rem 2rem', fontWeight: 700, fontSize: '0.75rem', backgroundColor: 'var(--color-midnight)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+               >
+                 Guardar Requerimiento
                </button>
             </footer>
           </div>
