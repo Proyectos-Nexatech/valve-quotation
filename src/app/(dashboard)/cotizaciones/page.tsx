@@ -312,12 +312,8 @@ export default function CotizacionesListPage() {
 
       autoTable(doc, {
         startY: 100,
-        head: [['ÍTEM', 'CANT', 'ESPECIFICACIONES TÉCNICAS', 'HH', 'P. UNITARIO', 'SUBTOTAL']],
-        body: tableData.map((row, i) => {
-           const item = enrichedItems[i];
-           const hh = item.duracion * item.cantidad;
-           return [row[0], row[1], row[2], `${hh} H`, row[3], row[4]];
-        }),
+        head: [['ÍTEM', 'CANT', 'ESPECIFICACIONES TÉCNICAS', 'P. UNITARIO', 'SUBTOTAL']],
+        body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [40, 40, 40], fontSize: 9, fontStyle: 'bold' },
         bodyStyles: { fontSize: 8 },
@@ -327,7 +323,7 @@ export default function CotizacionesListPage() {
       let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text('DURACIÓN TOTAL (HH):', 110, currentY);
+      doc.text('TIEMPO DE EJECUCIÓN (HH):', 110, currentY);
       doc.text(`${totalHours} HORAS`, 160, currentY);
 
       currentY += 10;

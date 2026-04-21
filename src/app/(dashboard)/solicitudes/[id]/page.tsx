@@ -421,7 +421,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
 
                 <div style={{ backgroundColor: 'white', padding: '3rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end', borderTop: '2px solid var(--color-surface-low)' }}>
                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
-                      <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>DURACIÓN TOTAL ESTIMADA (HH)</span>
+                      <span style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)' }}>TIEMPO DE EJECUCIÓN (HH)</span>
                       <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-maroon)' }}>{items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS</span>
                    </div>
                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '400px' }}>
@@ -632,7 +632,6 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                      <th style={{ padding: '0.5rem' }}>CANT</th>
                                      <th style={{ padding: '0.5rem' }}>TAMAÑO</th>
                                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>DESCRIPCIÓN</th>
-                                     <th style={{ padding: '0.5rem' }}>HH</th>
                                      <th style={{ padding: '0.5rem' }}>VALOR UNIT.</th>
                                      <th style={{ padding: '0.5rem' }}>TOTAL</th>
                                   </tr>
@@ -651,7 +650,6 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                               ({item.servicio}){getSpec(item, 'montajeDesmontaje') ? ' + Montaje/Desmontaje' : ''}
                                             </span>
                                           </td>
-                                         <td style={{ padding: '0.5rem', textAlign: 'center' }}>{durationHours} H</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice)}</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice * item.cantidad)}</td>
                                       </tr>
@@ -665,7 +663,7 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                              <p style={{ fontSize: '0.75rem' }}>Subtotal: {formatCurrency(subtotal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>Descuento ({discount}%): -{formatCurrency(discountVal)}</p>
                              <p style={{ fontSize: '0.75rem' }}>IVA ({ivaRate}%): {formatCurrency(iva)}</p>
-                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>DURACIÓN TOTAL ESTIMADA: {items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS (HH)</p>
+                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>TIEMPO DE EJECUCIÓN: {items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS</p>
                              <p style={{ fontSize: '1rem', fontWeight: 900, marginTop: '0.5rem', borderTop: '2px solid black', paddingTop: '0.5rem' }}>TOTAL: {formatCurrency(total)}</p>
                          </div>
                     </div>
