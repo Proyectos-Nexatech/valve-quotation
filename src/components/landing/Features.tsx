@@ -1,7 +1,7 @@
 import {
-  ISAGeneralValve,
+  ISAManualValve,
   ISASafetyValve,
-  ISABallValve,
+  ISAOnOffValve,
   ISAControlValve,
   ISAPressureVacuumValve
 } from '../icons/ISAValveIcons';
@@ -10,27 +10,27 @@ const FEATURE_DATA = [
   {
     title: 'Válvulas Manuales',
     description: 'Mantenimiento preventivo y correctivo, cambio de empaquetaduras y pruebas de sello segun API-598.',
-    icon: <ISAGeneralValve size={32} />,
+    icon: <ISAManualValve size={48} />,
   },
   {
     title: 'VÁLVULAS ON/OFF',
     description: 'Pruebas de cierre, mantenimiento de actuadorres electricos y neumaticos y verificacion de fallas.',
-    icon: <ISABallValve size={32} />,
+    icon: <ISAOnOffValve size={48} />,
   },
   {
     title: 'VÁLVULAS PRESIÓN-VACÍO',
     description: 'Pruebas de hermeticidad y calibración de venteos para tanques de almacenamiento e industria.',
-    icon: <ISAPressureVacuumValve size={32} />,
+    icon: <ISAPressureVacuumValve size={48} />,
   },
   {
     title: 'Válvulas de Control',
     description: 'Calibración de carrera, mantenimiento de actuadores y posicionadores, comprobacion de fallas y pruebas de cierre (seat leakage) conforme a ANSI/FCI 70-2.',
-    icon: <ISAControlValve size={32} />,
+    icon: <ISAControlValve size={48} />,
   },
   {
     title: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
     description: 'Inspección y calibracion, bajo norma API 527 para alivio de presion de procesos.',
-    icon: <ISASafetyValve size={32} />,
+    icon: <ISASafetyValve size={48} />,
   }
 ];
 
