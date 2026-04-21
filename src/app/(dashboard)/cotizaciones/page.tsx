@@ -324,24 +324,23 @@ export default function CotizacionesListPage() {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.text('TIEMPO DE EJECUCIÓN:', 110, currentY);
-      doc.text(`${totalHours} HORAS`, 175, currentY);
+      doc.text(`${totalHours} HORAS`, 170, currentY);
 
       currentY += 10;
       doc.setFontSize(9);
       doc.text('SUBTOTAL:', 110, currentY);
-      doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 175, currentY);
+      doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 170, currentY);
 
       currentY += 7;
       doc.text('IVA (19%):', 110, currentY);
-      doc.text(`$ ${Math.round(iva).toLocaleString()}`, 175, currentY);
+      doc.text(`$ ${Math.round(iva).toLocaleString()}`, 170, currentY);
 
       currentY += 10;
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
       doc.text('TOTAL DE LA PROPUESTA (COP):', 110, currentY);
-      currentY += 10;
       doc.setFontSize(16);
-      doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 175, currentY); 
+      doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 170, currentY); 
 
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
