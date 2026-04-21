@@ -29,7 +29,7 @@ export const Portfolio = () => {
             fontSize: '2.5rem', color: 'var(--color-slate-800)', marginBottom: '1.5rem',
             fontWeight: 900, textTransform: 'uppercase', lineHeight: '1.2'
           }}>
-            🛠️ Portafolio de Servicios: <span style={{ color: 'var(--color-maroon)' }}>Mantenimiento y Certificación de Válvulas</span>
+            🛠️ Portafolio de Servicios: <span style={{ color: 'var(--color-maroon)' }}>Mantenimiento de Válvulas Industriales</span>
           </h2>
           <div style={{ width: '60px', height: '4px', backgroundColor: 'var(--color-red-bright)', marginBottom: '2rem' }} />
           <p style={{ fontSize: '1.125rem', color: 'var(--color-slate-600)', maxWidth: '800px', lineHeight: '1.8' }}>
