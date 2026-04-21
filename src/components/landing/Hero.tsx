@@ -35,7 +35,7 @@ export const Hero = () => {
         </h1>
         
         <p style={{ fontSize: '1.125rem', lineHeight: '1.6', color: 'rgba(255,255,255,1)', marginBottom: '3.5rem', maxWidth: '600px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-          Optimice sus procesos industriales con nuestro sistema de cotización. Soporte técnico especializado de alta precisión.
+          Optimice sus procesos industriales con nuestro sistema de cotización. Soporte técnico especializado.
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
