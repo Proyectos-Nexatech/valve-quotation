@@ -18,14 +18,14 @@ const FEATURE_DATA = [
     icon: <ISABallValve size={32} />,
   },
   {
-    title: 'Válvulas de Control',
-    description: 'Calibración de carrera, mantenimiento de actuadores y posicionadores, comprobacion de fallas y pruebas de cierre (seat leakage) conforme a ANSI/FCI 70-2.',
-    icon: <ISAControlValve size={32} />,
-  },
-  {
     title: 'VÁLVULAS PRESIÓN-VACÍO',
     description: 'Pruebas de hermeticidad y calibración de venteos para tanques de almacenamiento e industria.',
     icon: <ISAPressureVacuumValve size={32} />,
+  },
+  {
+    title: 'Válvulas de Control',
+    description: 'Calibración de carrera, mantenimiento de actuadores y posicionadores, comprobacion de fallas y pruebas de cierre (seat leakage) conforme a ANSI/FCI 70-2.',
+    icon: <ISAControlValve size={32} />,
   },
   {
     title: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',

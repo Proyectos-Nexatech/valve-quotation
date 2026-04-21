@@ -9,8 +9,8 @@ import { supabase } from '@/lib/supabase';
 const VALVE_TYPE_LABELS: Record<string, string> = {
   'manual': 'VÁLVULAS MANUALES',
   'on-off': 'VÁLVULAS ON/OFF',
-  'control': 'VÁLVULAS DE CONTROL',
   'pressure-vacuum': 'VÁLVULAS PRESIÓN - VACÍO',
+  'control': 'VÁLVULAS DE CONTROL',
   'safety': 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO',
   'other': 'OTRO / POR DEFINIR'
 };

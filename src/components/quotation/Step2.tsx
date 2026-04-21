@@ -7,8 +7,8 @@ import { Plus, Trash2, ChevronRight, Hash, Download, Upload, FileSpreadsheet, In
 const VALVE_TYPES = [
   { id: 'manual', label: 'VÁLVULAS MANUALES' },
   { id: 'on-off', label: 'VÁLVULAS ON/OFF' },
-  { id: 'control', label: 'VÁLVULAS DE CONTROL' },
   { id: 'pressure-vacuum', label: 'VÁLVULAS PRESIÓN - VACÍO' },
+  { id: 'control', label: 'VÁLVULAS DE CONTROL' },
   { id: 'safety', label: 'VÁLVULAS DE SEGURIDAD Y/O ALIVIO' },
   { id: 'other', label: 'OTRO / POR DEFINIR' }
 ];

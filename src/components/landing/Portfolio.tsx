@@ -98,14 +98,42 @@ export const Portfolio = () => {
             </div>
           </div>
 
-          {/* 3. Válvulas de Control */}
+          {/* 3. Válvulas de Presión y Vacío */}
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '2rem' }}>
+            <div style={{ color: 'var(--color-maroon)', backgroundColor: 'white', padding: '1rem', borderRadius: '4px', height: 'fit-content', boxShadow: 'var(--shadow-sm)' }}>
+              <ISAPressureVacuumValve size={48} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
+                3. Válvulas de Presión y Vacío
+              </h3>
+              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Servicios especializados para tanques de almacenamiento de hidrocarburos o químicos.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alcance:</h4>
+                  <p style={{ color: 'var(--color-slate-600)', fontSize: '0.95rem' }}>Inspección de elementos internos y verificación de sello.</p>
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Normativa Aplicable:</h4>
+                  <ul style={{ color: 'var(--color-slate-600)', fontSize: '0.9rem', listStyle: 'none', padding: 0 }}>
+                    <li>• API 2000</li>
+                  </ul>
+                </div>
+              </div>
+              <p style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FFF5F5', borderLeft: '3px solid var(--color-red-bright)', fontSize: '0.9rem', color: 'var(--color-maroon)', fontWeight: 600 }}>
+                Pruebas: Verificación de set-point (presión positiva y vacío) en bancos de baja presión.
+              </p>
+            </div>
+          </div>
+
+          {/* 4. Válvulas de Control */}
           <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '2rem' }}>
             <div style={{ color: 'var(--color-maroon)', backgroundColor: 'white', padding: '1rem', borderRadius: '4px', height: 'fit-content', boxShadow: 'var(--shadow-sm)' }}>
               <ISAControlValve size={48} />
             </div>
             <div>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
-                3. Válvulas de Control (Proporcionales)
+                4. Válvulas de Control (Proporcionales)
               </h3>
               <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Verificacion de cierre de acuerdo a la clase de la valvula.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
@@ -123,34 +151,6 @@ export const Portfolio = () => {
               </div>
               <p style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FFF5F5', borderLeft: '3px solid var(--color-red-bright)', fontSize: '0.9rem', color: 'var(--color-maroon)', fontWeight: 600 }}>
                 Pruebas: Calibración de carrera.
-              </p>
-            </div>
-          </div>
-
-          {/* 4. Válvulas de Presión y Vacío */}
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '2rem' }}>
-            <div style={{ color: 'var(--color-maroon)', backgroundColor: 'white', padding: '1rem', borderRadius: '4px', height: 'fit-content', boxShadow: 'var(--shadow-sm)' }}>
-              <ISAPressureVacuumValve size={48} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-slate-800)', marginBottom: '1rem', textTransform: 'uppercase' }}>
-                4. Válvulas de Presión y Vacío.
-              </h3>
-              <p style={{ fontWeight: 600, color: 'var(--color-maroon)', marginBottom: '1rem' }}>Servicios especializados para tanques de almacenamiento de hidrocarburos o químicos.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Alcance:</h4>
-                  <p style={{ color: 'var(--color-slate-600)', fontSize: '0.95rem' }}>Inspección de elementos internos y verificación de sello.</p>
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-slate-700)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Normativa Aplicable:</h4>
-                  <ul style={{ color: 'var(--color-slate-600)', fontSize: '0.9rem', listStyle: 'none', padding: 0 }}>
-                    <li>• API 2000</li>
-                  </ul>
-                </div>
-              </div>
-              <p style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#FFF5F5', borderLeft: '3px solid var(--color-red-bright)', fontSize: '0.9rem', color: 'var(--color-maroon)', fontWeight: 600 }}>
-                Pruebas: Verificación de set-point (presión positiva y vacío) en bancos de baja presión.
               </p>
             </div>
           </div>
