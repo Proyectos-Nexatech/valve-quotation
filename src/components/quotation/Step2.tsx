@@ -228,9 +228,9 @@ export const Step2 = () => {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <section>
-              <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>1. Configuración de Partidas</h4>
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-midnight)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>1. Configuración de Solicitud</h4>
               <ul style={{ fontSize: '0.875rem', color: 'var(--color-on-surface-variant)', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.5' }}>
-                <li>Seleccione el <strong>Tipo de Válvula</strong> en el panel izquierdo de cada partida.</li>
+                <li>Seleccione el <strong>Tipo de Válvula</strong> en el panel izquierdo de cada solicitud.</li>
                 <li>Indique la <strong>Cantidad</strong> y los parámetros de <strong>Tamaño/Rating</strong>.</li>
                 <li>Defina el <strong>Tipo de Servicio</strong> y la <strong>Ubicación</strong> de ejecución.</li>
               </ul>
