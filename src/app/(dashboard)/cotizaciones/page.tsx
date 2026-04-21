@@ -293,12 +293,16 @@ export default function CotizacionesListPage() {
       ]);
 
       const totalHours = enrichedItems.reduce((acc, item) => acc + (item.duracion * item.cantidad), 0);
-      const totalDays = Math.ceil(totalHours / 8);
+
 
       autoTable(doc, {
         startY: 100,
-        head: [['ÍTEM', 'CANT', 'ESPECIFICACIONES TÉCNICAS', 'P. UNITARIO', 'SUBTOTAL']],
-        body: tableData,
+        head: [['ÍTEM', 'CANT', 'ESPECIFICACIONES TÉCNICAS', 'HH', 'P. UNITARIO', 'SUBTOTAL']],
+        body: tableData.map((row, i) => {
+           const item = enrichedItems[i];
+           const hh = item.duracion * item.cantidad;
+           return [row[0], row[1], row[2], `${hh} H`, row[3], row[4]];
+        }),
         theme: 'striped',
         headStyles: { fillColor: [40, 40, 40], fontSize: 9, fontStyle: 'bold' },
         bodyStyles: { fontSize: 8 },
@@ -308,8 +312,8 @@ export default function CotizacionesListPage() {
       let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text('DURACIÓN ESTIMADA:', 110, currentY);
-      doc.text(`${totalDays} DÍAS (8h/turno)`, 160, currentY);
+      doc.text('DURACIÓN TOTAL (HH):', 110, currentY);
+      doc.text(`${totalHours} HORAS`, 160, currentY);
 
       currentY += 10;
       doc.setFontSize(9);
