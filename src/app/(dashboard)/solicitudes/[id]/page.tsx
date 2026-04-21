@@ -639,7 +639,6 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                <tbody>
                                   {items.map(item => {
                                     const unitPrice = getEnrichedItemValue(item, 'precio_unitario_cop');
-                                    const durationHours = getEnrichedItemValue(item, 'duracion') * item.cantidad;
                                     return (
                                       <tr key={item.id} style={{ borderBottom: '1px solid #EEE' }}>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
