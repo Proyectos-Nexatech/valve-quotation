@@ -5,12 +5,12 @@ const STEPS = [
   {
     number: '01',
     title: 'LEVANTAMIENTO',
-    description: 'Sube tu inventario de válvulas a nuestra plataforma digital en segundos.'
+    description: 'Sube tu inventario de válvulas a nuestra plataforma digital.'
   },
   {
     number: '02',
     title: 'ANÁLISIS TÉCNICO',
-    description: 'Nuestros ingenieros evalúan las especificaciones y el alcance del servicio.'
+    description: 'Nuestro departamento evalúa el alcance y las especificaciones del servicio.'
   },
   {
     number: '03',
