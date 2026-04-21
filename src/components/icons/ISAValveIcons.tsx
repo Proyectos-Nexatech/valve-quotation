@@ -41,6 +41,18 @@ export const ISAGeneralValve = (props: IconProps) => (
   </SVGWrapper>
 );
 
+// On/Off Valve (Bowtie with solenoid/piston actuator)
+export const ISAOnOffValve = (props: IconProps) => (
+  <SVGWrapper {...props}>
+    <path d="M4 18 L16 24 L4 30 Z M28 18 L16 24 L28 30 Z" stroke={props.color || 'currentColor'} strokeWidth="2" strokeLinejoin="round" />
+    <path d="M16 24 V14" stroke={props.color || 'currentColor'} strokeWidth="2" />
+    {/* Rectangular Actuator */}
+    <rect x="10" y="4" width="12" height="10" stroke={props.color || 'currentColor'} strokeWidth="2" />
+    <path d="M10 9 H22" stroke={props.color || 'currentColor'} strokeWidth="1.5" />
+    <path d="M16 4 V9" stroke={props.color || 'currentColor'} strokeWidth="1.5" />
+  </SVGWrapper>
+);
+
 // Globe Valve (Bowtie with dot)
 export const ISAGlobeValve = (props: IconProps) => (
   <SVGWrapper {...props}>
