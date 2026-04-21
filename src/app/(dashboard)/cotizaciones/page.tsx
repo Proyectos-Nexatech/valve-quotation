@@ -323,22 +323,22 @@ export default function CotizacionesListPage() {
       let currentY = (doc as any).lastAutoTable.finalY + 15;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
-      doc.text('TIEMPO DE EJECUCIÓN:', 95, currentY);
+      doc.text('TIEMPO DE EJECUCIÓN:', 20, currentY);
       doc.text(`${totalHours} HORAS`, 190, currentY, { align: 'right' });
 
       currentY += 10;
       doc.setFontSize(9);
-      doc.text('SUBTOTAL:', 95, currentY);
+      doc.text('SUBTOTAL:', 20, currentY);
       doc.text(`$ ${Math.round(subtotal).toLocaleString()}`, 190, currentY, { align: 'right' });
 
       currentY += 7;
-      doc.text('IVA (19%):', 95, currentY);
+      doc.text('IVA (19%):', 20, currentY);
       doc.text(`$ ${Math.round(iva).toLocaleString()}`, 190, currentY, { align: 'right' });
 
       currentY += 10;
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text('TOTAL DE LA PROPUESTA (COP):', 95, currentY);
+      doc.text('TOTAL DE LA PROPUESTA (COP):', 20, currentY);
       doc.setFontSize(16);
       doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 190, currentY, { align: 'right' }); 
 
