@@ -646,9 +646,11 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.cantidad}</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{getSpec(item, 'nominalSize') || '—'}</td>
                                          <td style={{ padding: '0.5rem' }}>
-                                           {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} ({item.servicio})
-                                           {getSpec(item, 'montajeDesmontaje') ? ' + Montaje/Desmontaje' : ''}
-                                         </td>
+                                            {VALVE_TYPE_LABELS[item.tipo_valvula] || item.tipo_valvula} {getSpec(item, 'nominalSize')} {getSpec(item, 'rating')}<br/>
+                                            <span style={{ fontSize: '0.5rem', opacity: 0.7 }}>
+                                              ({item.servicio}){getSpec(item, 'montajeDesmontaje') ? ' + Montaje/Desmontaje' : ''}
+                                            </span>
+                                          </td>
                                          <td style={{ padding: '0.5rem', textAlign: 'center' }}>{durationDays} D</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice)}</td>
                                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(unitPrice * item.cantidad)}</td>

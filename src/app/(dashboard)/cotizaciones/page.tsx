@@ -182,11 +182,22 @@ export default function CotizacionesListPage() {
       if (!items || !catalogItems || !config) throw new Error("Datos incompletos");
 
       const enrichedItems = items.map(item => {
-        const itemSizeNum = parseIndustrialSize(item.especificaciones?.nominalSize);
-        const itemRatingNum = parseFloat(item.especificaciones?.rating?.replace(/[^0-9.]/g, '') || '0');
+        let specs = item.especificaciones;
+        if (typeof specs === 'string') {
+          try { specs = JSON.parse(specs); } catch (e) { specs = {}; }
+        }
+
+        const itemSizeNum = parseIndustrialSize(specs?.nominalSize);
+        const itemRatingNum = parseFloat(specs?.rating?.toString().replace(/[^0-9.]/g, '') || '0');
 
         const potentialMatches = catalogItems.filter(c => {
-          const typeMap: Record<string, string> = { 'manual': 'manual', 'safety': 'seguridad', 'on-off': 'on', 'control': 'control' };
+          const typeMap: Record<string, string> = { 
+            'manual': 'manual', 
+            'safety': 'seguridad', 
+            'on-off': 'on', 
+            'control': 'control',
+            'pressure-vacuum': 'presión'
+          };
           const catType = (c.tipo_valvula || '').toLowerCase();
           const itemType = typeMap[item.tipo_valvula] || item.tipo_valvula;
           if (!catType.includes(itemType)) return false;
@@ -226,7 +237,7 @@ export default function CotizacionesListPage() {
         const finalPrice = item.precio_unitario_cop || (match ? match.costo_base : 850000);
         const finalDur = item.duracion || (match ? match.duracion : 0);
 
-        return { ...item, precio_unitario_cop: finalPrice, duracion: finalDur };
+        return { ...item, especificaciones: specs, precio_unitario_cop: finalPrice, duracion: finalDur };
       });
 
       const doc = new jsPDF();
@@ -276,7 +287,7 @@ export default function CotizacionesListPage() {
       const tableData = enrichedItems.map((item, index) => [
         (index + 1).toString().padStart(2, '0'),
         item.cantidad.toString(),
-        `${VALVE_LABELS[item.tipo_valvula] || item.tipo_valvula} - ${item.especificaciones?.nominalSize} ${item.especificaciones?.rating}\n(${item.servicio})`,
+        `${VALVE_LABELS[item.tipo_valvula] || item.tipo_valvula} ${item.especificaciones?.nominalSize || ''} ${item.especificaciones?.rating || ''}\n(${item.servicio})${item.especificaciones?.montajeDesmontaje ? ' + Montaje/Desmontaje' : ''}`,
         `$ ${Math.round(item.precio_unitario_cop).toLocaleString()}`,
         `$ ${Math.round(item.precio_unitario_cop * item.cantidad).toLocaleString()}`
       ]);
