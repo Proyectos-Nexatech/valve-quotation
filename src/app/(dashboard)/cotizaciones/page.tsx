@@ -342,10 +342,18 @@ export default function CotizacionesListPage() {
       doc.setFontSize(16);
       doc.text(`$ ${Math.round(totalFinal).toLocaleString()}`, 190, currentY, { align: 'right' }); 
 
+      currentY += 20;
+      doc.setFontSize(9);
+      doc.setTextColor(153, 27, 27); // Maroon color
+      doc.setFont('helvetica', 'bold');
+      doc.text('Alcance general Mantenimiento de válvulas:', 20, currentY);
+
+      currentY += 6;
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'normal');
       const splitTerms = doc.splitTextToSize(config.terminos_condiciones || 'Esta cotización tiene una validez de 30 días.', 170);
-      doc.text(splitTerms, 105, 275, { align: 'center' });
+      doc.text(splitTerms, 20, currentY, { align: 'left' });
 
       doc.save(`${request.folio}_cotizacion.pdf`);
     } catch (err) {

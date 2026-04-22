@@ -658,14 +658,22 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                             </table>
                          </div>
 
-                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                             <p style={{ fontSize: '0.75rem' }}>Subtotal: {formatCurrency(subtotal)}</p>
-                             <p style={{ fontSize: '0.75rem' }}>Descuento ({discount}%): -{formatCurrency(discountVal)}</p>
-                             <p style={{ fontSize: '0.75rem' }}>IVA ({ivaRate}%): {formatCurrency(iva)}</p>
-                             <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>TIEMPO DE EJECUCIÓN: {items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS</p>
-                             <p style={{ fontSize: '1rem', fontWeight: 900, marginTop: '0.5rem', borderTop: '2px solid black', paddingTop: '0.5rem' }}>TOTAL: {formatCurrency(total)}</p>
-                         </div>
-                    </div>
+                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '2rem' }}>
+                              <p style={{ fontSize: '0.75rem' }}>Subtotal: {formatCurrency(subtotal)}</p>
+                              <p style={{ fontSize: '0.75rem' }}>Descuento ({discount}%): -{formatCurrency(discountVal)}</p>
+                              <p style={{ fontSize: '0.75rem' }}>IVA ({ivaRate}%): {formatCurrency(iva)}</p>
+                              <p style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-maroon)' }}>TIEMPO DE EJECUCIÓN: {items.reduce((acc, i) => acc + (getEnrichedItemValue(i, 'duracion') * i.cantidad), 0)} HORAS</p>
+                              <div style={{ margin: '0.5rem 0', borderTop: '2px solid black' }} />
+                              <p style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-midnight)' }}>TOTAL: {formatCurrency(total)}</p>
+                          </div>
+
+                          <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '1.5rem' }}>
+                             <p style={{ fontSize: '0.625rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--color-maroon)', textAlign: 'left' }}>Alcance general Mantenimiento de válvulas:</p>
+                             <p style={{ fontSize: '0.625rem', lineHeight: 1.6, color: '#444', textAlign: 'left', whiteSpace: 'pre-wrap' }}>
+                                {globalConfig?.terminos_condiciones}
+                             </p>
+                          </div>
+                     </div>
                   </div>
 
                   {/* Right: Actions */}
@@ -712,22 +720,22 @@ export default function RequestDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </>
              ) : (
-               /* Success View */
-               <div style={{ padding: '6rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-                  <div style={{ width: '80px', height: '80px', backgroundColor: '#10B981', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scaleUp 0.3s' }}>
-                    <FileCheck size={40} />
-                  </div>
-                  <div>
-                    <h3 className="display-font" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>¡Documento Generado!</h3>
-                    <p style={{ opacity: 0.6 }}>La cotización <strong>{request.folio}</strong> ha sido finalizada con éxito.</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem' }}>
-                     <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.25rem' }}>ESTADO ACTUAL</p>
-                        <span style={{ backgroundColor: '#D1FAE5', color: '#059669', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 900 }}>FINALIZADA</span>
-                     </div>
-                  </div>
-               </div>
+                /* Success View */
+                <div style={{ padding: '6rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
+                   <div style={{ width: '80px', height: '80px', backgroundColor: '#10B981', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'scaleUp 0.3s' }}>
+                     <FileCheck size={40} />
+                   </div>
+                   <div>
+                     <h3 className="display-font" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>¡Documento Generado!</h3>
+                     <p style={{ opacity: 0.6 }}>La cotización <strong>{request.folio}</strong> ha sido finalizada con éxito.</p>
+                   </div>
+                   <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1rem' }}>
+                      <div style={{ textAlign: 'center' }}>
+                         <p style={{ fontSize: '0.625rem', fontWeight: 800, color: 'var(--color-on-surface-variant)', marginBottom: '0.25rem' }}>ESTADO ACTUAL</p>
+                         <span style={{ backgroundColor: '#D1FAE5', color: '#059669', padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 900 }}>FINALIZADA</span>
+                      </div>
+                   </div>
+                </div>
              )}
            </div>
          </div>

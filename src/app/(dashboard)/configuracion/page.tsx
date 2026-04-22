@@ -253,11 +253,20 @@ export default function ConfigurationPage() {
                          </div>
                       </div>
 
-                     {/* Footer / Terms */}
-                     <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#F8FAFC', borderLeft: '4px solid var(--color-maroon)' }}>
-                        <p style={{ fontSize: '0.625rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--color-maroon)' }}>NOTAS DE LA PROPUESTA:</p>
-                        <p style={{ fontSize: '0.625rem', lineHeight: 1.6, color: '#475569' }}>{config.terminos_condiciones}</p>
-                     </div>
+                      {/* Total and Terms */}
+                      <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2rem', borderTop: '2px solid #F1F5F9', paddingTop: '1rem' }}>
+                            <div style={{ textAlign: 'right' }}>
+                               <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B' }}>TOTAL COTIZACIÓN</p>
+                               <p style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-midnight)' }}>$ 10.450.000</p>
+                            </div>
+                         </div>
+
+                         <div style={{ padding: '1.5rem', borderTop: '1px solid #E2E8F0' }}>
+                            <p style={{ fontSize: '0.625rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--color-maroon)', textAlign: 'left' }}>Alcance general Mantenimiento de válvulas:</p>
+                            <p style={{ fontSize: '0.625rem', lineHeight: 1.6, color: '#475569', textAlign: 'left', whiteSpace: 'pre-wrap' }}>{config.terminos_condiciones}</p>
+                         </div>
+                      </div>
                   </div>
                </div>
             </div>
@@ -386,7 +395,7 @@ export default function ConfigurationPage() {
 
          {activeTab === 'users' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <div style={{ display: 'justify-content', alignItems: 'center' }}>
                   <div>
                      <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>ACCESO Y SEGURIDAD DEL EQUIPO</h3>
                      <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.25rem' }}>Administra los niveles de permiso para cada integrante registrado.</p>
@@ -404,7 +413,7 @@ export default function ConfigurationPage() {
                      </thead>
                      <tbody>
                         {profiles.length === 0 ? (
-                          <tr><td colSpan={3} style={{ padding: '4rem', textAlign: 'center', fontSize: '0.875rem', color: '#94A3B8' }}>No hay usuarios registrados en el sistema.</td></tr>
+                           <tr><td colSpan={3} style={{ padding: '4rem', textAlign: 'center', fontSize: '0.875rem', color: '#94A3B8' }}>No hay usuarios registrados en el sistema.</td></tr>
                         ) : profiles.map((p) => (
                            <tr key={p.id} style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: 'white' }}>
                               <td style={{ padding: '1.25rem 2rem' }}>
